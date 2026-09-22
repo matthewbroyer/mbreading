@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mbreading.online – Private Reading Notebook</title>
+    <meta name="description" content="mbreading.online – a free, private, browser-based notebook for tracking books, notes, and quotes. All data stays on your device.">
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%235c8a6e'/%3E%3Cpath d='M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-.9-2-2V18z' fill='%23f7f5f0'/%3E%3Cpath d='M50 18c0-1.1-.9-2-2-2H36c-3.3 0-6 2.2-6 5v27c2.2-1.5 4.5-2.2 6.5-2.2H48c1.1 0 2-.9 2-2V18z' fill='%23e8e4db'/%3E%3Cpath d='M32 21v27' stroke='%235c8a6e' stroke-width='1.5' stroke-linecap='round' opacity='0.4'/%3E%3Ccircle cx='46' cy='14' r='5' fill='%23c4a574'/%3E%3C/svg%3E">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        book: { 50: '#f4f7f4', 100: '#e4ebe4', 800: '#2d4038', 900: '#1a2a24' },
+                        accent: '#5c8a6e',
+                        accentHover: '#4a7359',
+                        warm: '#c4a574',
+                        paper: '#f7f5f0',
+                        paperDark: '#121a17'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f7f5f0; color: #2c3330; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        html.dark body { background-color: #121a17; color: #e5e9e6; }
+        #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5; }
+        html.dark #bg-canvas { opacity: 0.3; }
+        .app-shell { position: relative; z-index: 1; }
+        .kanban-col { min-height: 38vh; }
+        .markdown-body h1 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; border-bottom: 1px solid #e4ebe4; padding-bottom: 0.3em; }
+        html.dark .markdown-body h1 { border-color: #2d4038; }
+        .markdown-body h2 { font-size: 1.25em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body blockquote { border-left: 4px solid #c4a574; padding-left: 1em; color: #5a635e; font-style: italic; }
+        html.dark .markdown-body blockquote { border-color: #5c8a6e; color: #a8b5ae; }
+        .hide { display: none !important; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d9d4; border-radius: 4px; }
+        html.dark ::-webkit-scrollbar-thumb { background: #3a4a42; }
+        .loader { border-top-color: #5c8a6e; animation: spinner 0.7s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn-primary { min-height: 48px; }
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #5c8a6e; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) {
+            * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+            #bg-canvas { display: none; }
+        }
+        .chart-bar { transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        .status-bar { transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+        .live-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .live-card:hover { transform: translateY(-2px); }
+        .logo-svg { width: 30px; height: 30px; flex-shrink: 0; }
+        .logo-svg-lg { width: 48px; height: 48px; }
+        .bg-accent { background-color: #5c8a6e; }
+        .hover\:bg-accentHover:hover { background-color: #4a7359; }
+        .text-accent { color: #5c8a6e; }
+        .focus\:ring-accent:focus { --tw-ring-color: #5c8a6e; }
+    </style>
+</head>
+<body class="font-sans antialiased h-screen flex overflow-hidden transition-colors duration-200">
+
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <div class="app-shell flex w-full h-full">
+
+    <div id="loader-overlay" class="fixed inset-0 bg-stone-900/70 backdrop-blur-sm z-[100] flex flex-col items-center justify-center hide" role="status" aria-live="polite">
+        <div class="w-10 h-10 border-4 border-stone-600 rounded-full loader mb-3" aria-hidden="true"></div>
+        <p class="text-white text-sm font-medium">Working...</p>
+    </div>
+
+    <div id="onboarding" class="fixed inset-0 bg-stone-900/95 z-[90] flex items-center justify-center p-4 hide" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center border border-stone-200 dark:border-book-800">
+            <div id="onboard-step-1">
+                <div class="mx-auto mb-6 flex justify-center">
+                    <svg class="logo-svg-lg" viewBox="0 0 64 64" aria-hidden="true">
+                        <rect width="64" height="64" rx="16" fill="#5c8a6e"/>
+                        <path d="M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-.9-2-2V18z" fill="#f7f5f0"/>
+                        <path d="M50 18c0-1.1-.9-2-2-2H36c-3.3 0-6 2.2-6 5v27c2.2-1.5 4.5-2.2 6.5-2.2H48c1.1 0 2-.9 2-2V18z" fill="#e8e4db"/>
+                        <path d="M32 21v27" stroke="#5c8a6e" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+                        <circle cx="46" cy="14" r="5" fill="#c4a574"/>
+                    </svg>
+                </div>
+                <h2 id="onboard-title" class="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-3">mbreading.online</h2>
+                <p class="text-stone-600 dark:text-stone-300 mb-8">Your private reading notebook. Track books, capture notes, keep quotes. Everything stays on this device.</p>
+                <button onclick="app.nextOnboard(2)" class="w-full btn-primary bg-accent hover:bg-accentHover text-white font-medium py-3 px-6 rounded-xl transition-colors">Show me how</button>
+            </div>
+            <div id="onboard-step-2" class="hide">
+                <h2 class="text-xl font-bold text-stone-800 dark:text-stone-100 mb-6">Three simple pieces</h2>
+                <div class="space-y-4 text-left mb-8">
+                    <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-accent font-bold text-sm">1</span></div><div><p class="font-medium text-stone-800 dark:text-stone-100">Pipeline</p><p class="text-sm text-stone-500 dark:text-stone-400">Move books from To Read → Reading → Finished</p></div></div>
+                    <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-accent font-bold text-sm">2</span></div><div><p class="font-medium text-stone-800 dark:text-stone-100">Notes</p><p class="text-sm text-stone-500 dark:text-stone-400">Write takeaways in Markdown</p></div></div>
+                    <div class="flex items-start gap-3"><div class="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-accent font-bold text-sm">3</span></div><div><p class="font-medium text-stone-800 dark:text-stone-100">Quotes</p><p class="text-sm text-stone-500 dark:text-stone-400">Save lines you want to keep</p></div></div>
+                </div>
+                <button onclick="app.nextOnboard(3)" class="w-full btn-primary bg-accent hover:bg-accentHover text-white font-medium py-3 px-6 rounded-xl transition-colors">Next</button>
+            </div>
+            <div id="onboard-step-3" class="hide">
+                <div class="w-16 h-16 bg-accent/15 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-check text-accent text-2xl"></i></div>
+                <h2 class="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-3">You’re ready</h2>
+                <p class="text-stone-600 dark:text-stone-300 mb-8">Add your first book. Data never leaves this browser unless you export it.</p>
+                <button onclick="app.finishOnboard()" class="w-full btn-primary bg-accent hover:bg-accentHover text-white font-medium py-3 px-6 rounded-xl transition-colors">Add your first book</button>
+            </div>
+            <div class="mt-6 flex justify-center gap-2" aria-hidden="true">
+                <div id="dot-1" class="w-2 h-2 rounded-full bg-accent"></div>
+                <div id="dot-2" class="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-600"></div>
+                <div id="dot-3" class="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scroll-progress-container" class="fixed top-0 left-0 w-full h-1 z-[60] bg-transparent pointer-events-none" aria-hidden="true">
+        <div id="scroll-progress" class="h-full bg-accent w-0 transition-all duration-100"></div>
+    </div>
+
+    <div id="cookie-banner" class="fixed bottom-4 left-4 right-4 md:right-auto md:w-96 bg-book-900 text-stone-100 p-4 rounded-xl shadow-2xl z-50 transform transition-transform duration-300 translate-y-32 hide" role="dialog" aria-label="Storage notice">
+        <div class="flex flex-col gap-3">
+            <p class="text-sm text-stone-300">mbreading.online stores your books, notes, and quotes only in this browser’s local storage. Nothing is sent to any server.</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="app.dismissCookie(false)" class="text-xs text-stone-400 hover:text-white py-2 px-3">Dismiss</button>
+                <button onclick="app.dismissCookie(true)" class="text-xs bg-accent hover:bg-accentHover text-white py-2 px-4 rounded-md transition-colors">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-menu" class="fixed inset-0 bg-book-900 z-40 transform translate-x-full transition-transform duration-300 flex flex-col md:hidden pt-20 px-6 pb-6" role="dialog" aria-label="Menu">
+        <nav class="flex flex-col space-y-2 flex-1" aria-label="Main">
+            <button onclick="app.navigate('dashboard'); app.toggleMobileMenu()" class="text-stone-100 hover:text-warm text-left text-lg py-3 border-b border-book-800">Your Pipeline</button>
+            <button onclick="app.navigate('quotes'); app.toggleMobileMenu()" class="text-stone-100 hover:text-warm text-left text-lg py-3 border-b border-book-800">All Quotes</button>
+            <button onclick="app.navigate('faq'); app.toggleMobileMenu()" class="text-stone-100 hover:text-warm text-left text-lg py-3 border-b border-book-800">FAQ & Legal</button>
+            <div class="pt-6 flex flex-col gap-3">
+                <button onclick="app.exportCSV()" class="btn-secondary bg-book-800 text-stone-100 py-3 rounded-xl"><i class="fas fa-download mr-2"></i> Export data</button>
+                <label class="btn-secondary bg-book-800 text-stone-100 py-3 rounded-xl text-center cursor-pointer">
+                    <i class="fas fa-upload mr-2"></i> Import data
+                    <input type="file" accept=".csv" class="hidden" onchange="app.importCSV(event)" aria-label="Import CSV">
+                </label>
+                <button onclick="app.promptClearAll()" class="btn-secondary bg-red-900/30 text-red-200 py-3 rounded-xl">Clear all data</button>
+            </div>
+        </nav>
+    </div>
+
+    <aside class="w-64 bg-book-900/95 backdrop-blur text-stone-100 flex-col hidden md:flex z-30 border-r border-book-800/80" aria-label="Sidebar">
+        <div class="p-6 flex items-center gap-3">
+            <svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true">
+                <rect width="64" height="64" rx="16" fill="#5c8a6e"/>
+                <path d="M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-.9-2-2V18z" fill="#f7f5f0"/>
+                <path d="M50 18c0-1.1-.9-2-2-2H36c-3.3 0-6 2.2-6 5v27c2.2-1.5 4.5-2.2 6.5-2.2H48c1.1 0 2-.9 2-2V18z" fill="#e8e4db"/>
+                <path d="M32 21v27" stroke="#5c8a6e" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+                <circle cx="46" cy="14" r="5" fill="#c4a574"/>
+            </svg>
+            <div>
+                <h1 class="text-lg font-bold leading-tight">mbreading.online</h1>
+                <p class="text-xs text-stone-400">Private reading notebook</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 space-y-1 mt-2" aria-label="Main">
+            <button onclick="app.navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left">
+                <i class="fas fa-layer-group w-5"></i><span>Your Pipeline</span>
+            </button>
+            <button onclick="app.navigate('quotes')" id="nav-quotes" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-300 hover:bg-book-800 transition-colors text-left">
+                <i class="fas fa-quote-right w-5"></i><span>All Quotes</span>
+            </button>
+            <button onclick="app.navigate('faq')" id="nav-faq" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-stone-300 hover:bg-book-800 transition-colors text-left">
+                <i class="fas fa-circle-question w-5"></i><span>FAQ & Legal</span>
+            </button>
+        </nav>
+        <div class="p-4 space-y-3">
+            <div class="flex gap-2">
+                <button id="btn-undo" onclick="app.undo()" disabled class="flex-1 bg-book-800 hover:bg-book-800/80 disabled:opacity-40 text-stone-300 py-2.5 rounded-xl text-xs border border-book-800" title="Undo" aria-label="Undo"><i class="fas fa-undo"></i></button>
+                <button id="btn-redo" onclick="app.redo()" disabled class="flex-1 bg-book-800 hover:bg-book-800/80 disabled:opacity-40 text-stone-300 py-2.5 rounded-xl text-xs border border-book-800" title="Redo" aria-label="Redo"><i class="fas fa-redo"></i></button>
+            </div>
+            <button onclick="app.toggleTheme()" class="w-full bg-book-800 text-stone-300 py-2.5 px-4 rounded-xl text-sm border border-book-800 flex justify-between items-center" aria-label="Toggle dark mode">
+                <span>Dark Mode</span> <i id="theme-icon" class="fas fa-moon"></i>
+            </button>
+            <div class="flex gap-2">
+                <button onclick="app.exportCSV()" class="flex-1 bg-book-800 text-stone-300 py-2.5 rounded-xl text-xs border border-book-800" aria-label="Export"><i class="fas fa-download"></i></button>
+                <label class="flex-1 bg-book-800 text-stone-300 py-2.5 rounded-xl text-xs border border-book-800 text-center cursor-pointer">
+                    <i class="fas fa-upload"></i>
+                    <input type="file" accept=".csv" class="hidden" onchange="app.importCSV(event)" aria-label="Import">
+                </label>
+            </div>
+            <button onclick="app.openModal('addBookModal')" class="w-full btn-primary bg-accent hover:bg-accentHover text-white py-3 px-4 rounded-xl text-sm font-medium transition-colors">
+                <i class="fas fa-plus mr-2"></i> Add Book
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <header class="bg-paper/85 dark:bg-paperDark/85 backdrop-blur border-b border-stone-200/80 dark:border-book-800/80 p-3 md:p-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+            <div class="flex items-center md:hidden gap-2">
+                <svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true">
+                    <rect width="64" height="64" rx="16" fill="#5c8a6e"/>
+                    <path d="M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-.9-2-2V18z" fill="#f7f5f0"/>
+                    <path d="M50 18c0-1.1-.9-2-2-2H36c-3.3 0-6 2.2-6 5v27c2.2-1.5 4.5-2.2 6.5-2.2H48c1.1 0 2-.9 2-2V18z" fill="#e8e4db"/>
+                    <path d="M32 21v27" stroke="#5c8a6e" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+                    <circle cx="46" cy="14" r="5" fill="#c4a574"/>
+                </svg>
+                <h1 class="text-lg font-bold text-stone-800 dark:text-stone-100">mbreading</h1>
+                <button onclick="app.toggleTheme()" class="text-stone-500 p-2" aria-label="Toggle dark mode"><i id="theme-icon-mobile" class="fas fa-moon"></i></button>
+            </div>
+            <div class="flex-1 max-w-xl mx-auto px-2 flex items-center gap-2">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"></i>
+                    <input type="search" id="global-search" onkeyup="app.handleSearch()" placeholder="Search books or quotes..." aria-label="Search" class="w-full bg-stone-100/90 dark:bg-book-800/90 border-none rounded-full pl-11 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-accent outline-none text-stone-800 dark:text-stone-200">
+                </div>
+                <div class="flex gap-1 md:hidden">
+                    <button id="btn-undo-mobile" onclick="app.undo()" disabled class="p-2.5 rounded-lg bg-stone-100 dark:bg-book-800 text-stone-600 disabled:opacity-40" aria-label="Undo"><i class="fas fa-undo text-sm"></i></button>
+                    <button id="btn-redo-mobile" onclick="app.redo()" disabled class="p-2.5 rounded-lg bg-stone-100 dark:bg-book-800 text-stone-600 disabled:opacity-40" aria-label="Redo"><i class="fas fa-redo text-sm"></i></button>
+                </div>
+            </div>
+            <div class="md:hidden">
+                <button onclick="app.toggleMobileMenu()" class="text-stone-600 dark:text-stone-300 p-3 text-xl" aria-label="Menu"><i class="fas fa-bars"></i></button>
+            </div>
+        </header>
+
+        <div id="scroll-area" class="flex-1 overflow-y-auto p-4 md:p-6 relative w-full h-full scroll-smooth">
+            
+            <div id="view-dashboard" class="view-section max-w-6xl mx-auto space-y-6">
+                
+                <div id="export-reminder" class="hide bg-warm/15 dark:bg-warm/10 border border-warm/40 text-stone-700 dark:text-stone-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-cloud-arrow-down mt-0.5 text-warm"></i>
+                        <div>
+                            <p class="font-medium text-sm" id="export-reminder-text">You haven’t exported a backup yet.</p>
+                            <p class="text-xs opacity-80 mt-0.5">Export creates a CSV you can keep offline.</p>
+                        </div>
+                    </div>
+                    <button onclick="app.exportCSV()" class="text-sm bg-warm hover:opacity-90 text-stone-900 py-2 px-4 rounded-lg font-medium whitespace-nowrap">Export now</button>
+                </div>
+
+                <!-- Reading Pace: stats only (7-day chart & status chart removed) -->
+                <section class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200/80 dark:border-book-800 p-5 live-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100"><i class="fas fa-chart-line mr-2 text-accent"></i> Reading Pace</h2>
+                        <button onclick="app.openModal('logSessionModal')" class="text-sm bg-stone-100 hover:bg-stone-200 dark:bg-book-800 text-stone-700 dark:text-stone-200 py-2 px-4 rounded-lg font-medium">Log pages</button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="p-4 bg-stone-50 dark:bg-book-800/60 rounded-xl">
+                            <p class="text-xs text-stone-500 font-medium">Books finished</p>
+                            <p class="text-2xl font-bold text-stone-800 dark:text-stone-100 mt-1" id="stat-total-books">0</p>
+                        </div>
+                        <div class="p-4 bg-stone-50 dark:bg-book-800/60 rounded-xl">
+                            <p class="text-xs text-stone-500 font-medium">Pages logged</p>
+                            <p class="text-2xl font-bold text-stone-800 dark:text-stone-100 mt-1" id="stat-total-pages">0</p>
+                        </div>
+                        <div class="p-4 bg-stone-50 dark:bg-book-800/60 rounded-xl">
+                            <p class="text-xs text-stone-500 font-medium">Last 7 days</p>
+                            <p class="text-2xl font-bold text-stone-800 dark:text-stone-100 mt-1" id="stat-pace">0 <span class="text-sm font-normal text-stone-500">pg/day</span></p>
+                        </div>
+                        <div class="p-4 bg-stone-50 dark:bg-book-800/60 rounded-xl">
+                            <p class="text-xs text-stone-500 font-medium">Currently reading</p>
+                            <p class="text-2xl font-bold text-stone-800 dark:text-stone-100 mt-1" id="stat-active">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Insights: year + genres + formats -->
+                <section class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200/80 dark:border-book-800 p-5 live-card">
+                    <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100 mb-5"><i class="fas fa-chart-pie mr-2 text-accent"></i> Insights</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div>
+                            <p class="text-xs font-medium text-stone-500 mb-3">Pages logged (last 12 months)</p>
+                            <div class="flex items-end gap-1 h-32" id="year-chart"></div>
+                            <div class="flex justify-between mt-1.5 text-[9px] text-stone-400 overflow-hidden" id="year-chart-labels"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-stone-500 mb-3">Top genres</p>
+                            <div class="space-y-2" id="genre-chart"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-stone-500 mb-3">Media formats</p>
+                            <div class="space-y-2" id="format-chart"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100"><i class="fas fa-bars-staggered mr-2 text-accent"></i> Book Pipeline</h2>
+                        <button onclick="app.openModal('addBookModal')" class="md:hidden text-sm bg-accent text-white py-2 px-4 rounded-lg font-medium"><i class="fas fa-plus mr-1"></i> Add</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-stone-100/90 dark:bg-book-900/90 backdrop-blur rounded-2xl p-4 flex flex-col border border-stone-200 dark:border-book-800">
+                            <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider mb-3 flex justify-between">To Read <span class="bg-stone-200 dark:bg-book-800 px-2 py-0.5 rounded-full" id="count-toread">0</span></h3>
+                            <div id="col-toread" class="kanban-col space-y-3 flex-1" role="list"></div>
+                        </div>
+                        <div class="bg-accent/10 dark:bg-book-900/80 backdrop-blur rounded-2xl p-4 flex flex-col border border-accent/25 dark:border-accent/20">
+                            <h3 class="text-xs font-bold text-accent uppercase tracking-wider mb-3 flex justify-between">Reading <span class="bg-accent/20 px-2 py-0.5 rounded-full" id="count-reading">0</span></h3>
+                            <div id="col-reading" class="kanban-col space-y-3 flex-1" role="list"></div>
+                        </div>
+                        <div class="bg-warm/10 dark:bg-book-900/80 backdrop-blur rounded-2xl p-4 flex flex-col border border-warm/30 dark:border-warm/20">
+                            <h3 class="text-xs font-bold text-warm uppercase tracking-wider mb-3 flex justify-between">Finished <span class="bg-warm/25 px-2 py-0.5 rounded-full" id="count-read">0</span></h3>
+                            <div id="col-read" class="kanban-col space-y-3 flex-1" role="list"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="view-book" class="view-section hide max-w-5xl mx-auto h-full flex flex-col">
+                <button onclick="app.navigate('dashboard')" class="text-stone-500 hover:text-stone-800 dark:text-stone-400 mb-3 self-start flex items-center py-2">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Pipeline
+                </button>
+                <div class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200 dark:border-book-800 p-5 mb-4 flex-shrink-0 live-card">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold text-stone-800 dark:text-stone-100" id="detail-title">Book Title</h2>
+                            <p class="text-stone-500 dark:text-stone-400" id="detail-author">Author</p>
+                            <div class="flex flex-wrap gap-2 mt-2 text-xs" id="detail-meta"></div>
+                        </div>
+                        <div class="flex space-x-2 w-full md:w-auto">
+                            <label class="sr-only" for="detail-status">Status</label>
+                            <select id="detail-status" onchange="app.updateBookStatus(this.value)" class="flex-1 md:flex-none border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl py-2.5 px-3 text-sm focus:ring-accent outline-none">
+                                <option value="toread">To Read</option>
+                                <option value="reading">Reading</option>
+                                <option value="read">Finished</option>
+                            </select>
+                            <button onclick="app.promptDeleteBook()" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-2.5 rounded-xl" aria-label="Delete book"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+                    <div class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200 dark:border-book-800 flex flex-col overflow-hidden min-h-[360px]">
+                        <div class="p-4 border-b border-stone-100 dark:border-book-800 flex justify-between items-center bg-stone-50/80 dark:bg-book-800/50">
+                            <h3 class="font-semibold text-stone-700 dark:text-stone-200"><i class="fas fa-pen-nib mr-2 text-accent"></i> Your Notes</h3>
+                            <div class="flex space-x-1">
+                                <button onclick="app.toggleNotesMode('edit')" id="btn-notes-edit" class="px-3 py-1.5 text-xs rounded-lg bg-white border border-stone-200 shadow-sm font-medium dark:bg-book-800 dark:border-book-800 dark:text-stone-100">Edit</button>
+                                <button onclick="app.toggleNotesMode('preview')" id="btn-notes-preview" class="px-3 py-1.5 text-xs rounded-lg text-stone-600 border border-transparent font-medium dark:text-stone-400">Preview</button>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative">
+                            <textarea id="notes-editor" class="absolute inset-0 w-full h-full p-4 resize-none outline-none text-stone-700 dark:text-stone-300 bg-white dark:bg-book-900 font-mono text-sm leading-relaxed" placeholder="Write your takeaways in Markdown. Do not enter passwords, SSNs, credit-card numbers, or other highly sensitive information."></textarea>
+                            <div id="notes-preview" class="absolute inset-0 w-full h-full p-5 overflow-y-auto markdown-body hide bg-white dark:bg-book-900 text-stone-800 dark:text-stone-300"></div>
+                        </div>
+                        <div class="p-3 border-t border-stone-100 dark:border-book-800 bg-stone-50/80 dark:bg-book-800/50 text-right">
+                            <button onclick="app.saveNotes()" class="bg-accent hover:bg-accentHover text-white py-2 px-5 rounded-lg text-sm font-medium">Save Notes</button>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200 dark:border-book-800 flex flex-col overflow-hidden min-h-[360px]">
+                        <div class="p-4 border-b border-stone-100 dark:border-book-800 flex justify-between items-center bg-stone-50/80 dark:bg-book-800/50">
+                            <h3 class="font-semibold text-stone-700 dark:text-stone-200"><i class="fas fa-quote-left mr-2 text-accent"></i> Quotes</h3>
+                            <button onclick="app.openModal('addQuoteModal')" class="text-xs bg-stone-200 hover:bg-stone-300 dark:bg-book-800 dark:text-stone-100 text-stone-700 py-1.5 px-3 rounded-lg font-medium"><i class="fas fa-plus mr-1"></i> Add</button>
+                        </div>
+                        <div id="book-quotes-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-stone-50/50 dark:bg-book-800/30" role="list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-quotes" class="view-section hide max-w-6xl mx-auto h-full flex flex-col">
+                <h2 class="text-xl font-bold text-stone-800 dark:text-stone-100 mb-5">All Quotes</h2>
+                <div id="global-quotes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pb-8" role="list"></div>
+            </div>
+
+            <div id="view-faq" class="view-section hide max-w-2xl mx-auto h-full flex flex-col">
+                <h2 class="text-xl font-bold text-stone-800 dark:text-stone-100 mb-5">FAQ & Legal</h2>
+                <div class="space-y-3">
+                    <details class="group bg-white/90 dark:bg-book-900/90 border border-stone-200 dark:border-book-800 rounded-xl">
+                        <summary class="flex items-center justify-between p-4 font-medium text-stone-800 dark:text-stone-200 cursor-pointer">Where is my data stored?</summary>
+                        <div class="px-4 pb-4 text-stone-600 dark:text-stone-400 text-sm">Everything is stored only in this browser’s local storage. Nothing is uploaded or sent to any server.</div>
+                    </details>
+                    <details class="group bg-white/90 dark:bg-book-900/90 border border-stone-200 dark:border-book-800 rounded-xl">
+                        <summary class="flex items-center justify-between p-4 font-medium text-stone-800 dark:text-stone-200 cursor-pointer">How do I back up or delete my data?</summary>
+                        <div class="px-4 pb-4 text-stone-600 dark:text-stone-400 text-sm">Use Export data for a CSV backup. Use Clear all data in the menu to erase everything stored by mbreading.online in this browser.</div>
+                    </details>
+                    <details class="group bg-white/90 dark:bg-book-900/90 border border-stone-200 dark:border-book-800 rounded-xl">
+                        <summary class="flex items-center justify-between p-4 font-medium text-stone-800 dark:text-stone-200 cursor-pointer">Privacy Policy</summary>
+                        <div class="px-4 pb-4 text-stone-600 dark:text-stone-400 text-sm space-y-2">
+                            <p>mbreading.online is a free, client-side web app. It does not collect, transmit, or share your personal information.</p>
+                            <p>All data stays in your browser’s local storage. No accounts, analytics, or advertising.</p>
+                            <p>Do not enter passwords, SSNs, credit-card numbers, or other highly sensitive information.</p>
+                        </div>
+                    </details>
+                    <details class="group bg-white/90 dark:bg-book-900/90 border border-stone-200 dark:border-book-800 rounded-xl">
+                        <summary class="flex items-center justify-between p-4 font-medium text-stone-800 dark:text-stone-200 cursor-pointer">Terms of Use</summary>
+                        <div class="px-4 pb-4 text-stone-600 dark:text-stone-400 text-sm space-y-2">
+                            <p>Provided “as is” for personal reading-note use. You are responsible for your content and backups.</p>
+                            <p>Do not use for illegal purposes or highly sensitive data storage.</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <button id="back-to-top" onclick="app.scrollToTop()" class="fixed bottom-6 right-6 bg-accent hover:bg-accentHover text-white p-3.5 rounded-full shadow-lg z-50 transform translate-y-20 opacity-0 transition-all duration-200" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
+        </div>
+    </main>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[70] hide" role="dialog" aria-modal="true">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 border border-stone-200 dark:border-book-800">
+            <h3 class="text-lg font-bold mb-2 text-stone-800 dark:text-stone-100" id="confirm-title">Are you sure?</h3>
+            <p class="text-sm text-stone-600 dark:text-stone-400 mb-6" id="confirm-message">This cannot be undone.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="app.closeConfirm()" class="px-4 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-book-800 rounded-xl">Cancel</button>
+                <button type="button" id="confirm-action-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addBookModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 border border-stone-200 dark:border-book-800 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Add a book</h3>
+            <form id="form-add-book" onsubmit="app.addBook(event)" class="space-y-4">
+                <div>
+                    <label for="add-title" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Title</label>
+                    <input type="text" id="add-title" required autocomplete="off" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div>
+                    <label for="add-author" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Author</label>
+                    <input type="text" id="add-author" required autocomplete="off" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-pages" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Total pages</label>
+                        <input type="number" id="add-pages" min="1" required class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                    </div>
+                    <div>
+                        <label for="add-year" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Year published</label>
+                        <input type="number" id="add-year" min="1000" max="2100" placeholder="e.g. 2011" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                    </div>
+                </div>
+                <div>
+                    <label for="add-genre" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Genre</label>
+                    <input type="text" id="add-genre" list="genre-list" placeholder="e.g. Fiction, History, Sci-Fi" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                    <datalist id="genre-list">
+                        <option value="Fiction"><option value="Non-Fiction"><option value="Science"><option value="History">
+                        <option value="Biography"><option value="Self-Help"><option value="Business"><option value="Fantasy">
+                        <option value="Mystery"><option value="Sci-Fi"><option value="Philosophy"><option value="Poetry"><option value="Memoir">
+                    </datalist>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="add-format" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Media format</label>
+                        <select id="add-format" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                            <option value="">Select…</option>
+                            <option value="Paperback">Paperback</option>
+                            <option value="Hardcover">Hardcover</option>
+                            <option value="Ebook">Ebook</option>
+                            <option value="Audiobook">Audiobook</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="add-status" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Status</label>
+                        <select id="add-status" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                            <option value="toread">To Read</option>
+                            <option value="reading">Reading</option>
+                            <option value="read">Finished</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="app.closeModal('addBookModal')" class="px-4 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-book-800 rounded-xl">Cancel</button>
+                    <button type="submit" class="btn-primary px-5 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accentHover rounded-xl">Add Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="logSessionModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 border border-stone-200 dark:border-book-800">
+            <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Log pages read</h3>
+            <form id="form-log-session" onsubmit="app.logSession(event)" class="space-y-4">
+                <div>
+                    <label for="session-pages" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Pages today</label>
+                    <input type="number" id="session-pages" min="1" required class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="app.closeModal('logSessionModal')" class="px-4 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-book-800 rounded-xl">Cancel</button>
+                    <button type="submit" class="btn-primary px-5 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accentHover rounded-xl">Log pages</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="addQuoteModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 m-4 border border-stone-200 dark:border-book-800">
+            <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Add quote</h3>
+            <form id="form-add-quote" onsubmit="app.addQuote(event)" class="space-y-4">
+                <div>
+                    <label for="quote-text" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Quote</label>
+                    <textarea id="quote-text" required rows="4" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent"></textarea>
+                </div>
+                <div>
+                    <label for="quote-page" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Page (optional)</label>
+                    <input type="number" id="quote-page" min="1" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="app.closeModal('addQuoteModal')" class="px-4 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-book-800 rounded-xl">Cancel</button>
+                    <button type="submit" class="btn-primary px-5 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accentHover rounded-xl">Save Quote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'mbreading_state_v1';
+        const HISTORY_LIMIT = 30;
+        const defaultState = {
+            books: [], sessions: [], currentView: 'dashboard', activeBookId: null,
+            darkMode: false, cookieAccepted: false, searchQuery: '', onboarded: false, lastExport: null
+        };
+
+        function escapeHTML(str) {
+            if (str == null) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+        const app = {
+            state: {}, history: [], historyIndex: -1, confirmCallback: null, isRestoring: false,
+            
+            init() {
+                this.loadState();
+                marked.setOptions({ breaks: true, gfm: true });
+                this.applyTheme();
+                this.checkCookie();
+                this.initScrollListener();
+                this.initBackground();
+                document.getElementById('global-search').value = '';
+                this.state.searchQuery = '';
+                this.pushHistory(true);
+                if (!this.state.onboarded) document.getElementById('onboarding').classList.remove('hide');
+                this.render();
+                this.updateUndoRedoButtons();
+            },
+
+            pushHistory(force = false) {
+                if (this.isRestoring) return;
+                const snapshot = { books: deepClone(this.state.books), sessions: deepClone(this.state.sessions), activeBookId: this.state.activeBookId };
+                if (!force && this.historyIndex >= 0 && JSON.stringify(this.history[this.historyIndex]) === JSON.stringify(snapshot)) return;
+                this.history = this.history.slice(0, this.historyIndex + 1);
+                this.history.push(snapshot);
+                if (this.history.length > HISTORY_LIMIT) this.history.shift();
+                else this.historyIndex++;
+                this.historyIndex = this.history.length - 1;
+                this.updateUndoRedoButtons();
+            },
+            undo() {
+                if (this.historyIndex <= 0) return;
+                this.isRestoring = true;
+                this.historyIndex--;
+                const snap = this.history[this.historyIndex];
+                this.state.books = deepClone(snap.books);
+                this.state.sessions = deepClone(snap.sessions);
+                this.state.activeBookId = snap.activeBookId;
+                if (this.state.activeBookId && !this.state.books.find(b => b.id === this.state.activeBookId)) {
+                    this.state.activeBookId = null;
+                    this.state.currentView = 'dashboard';
+                }
+                this.saveState(false);
+                this.isRestoring = false;
+                this.updateUndoRedoButtons();
+            },
+            redo() {
+                if (this.historyIndex >= this.history.length - 1) return;
+                this.isRestoring = true;
+                this.historyIndex++;
+                const snap = this.history[this.historyIndex];
+                this.state.books = deepClone(snap.books);
+                this.state.sessions = deepClone(snap.sessions);
+                this.state.activeBookId = snap.activeBookId;
+                this.saveState(false);
+                this.isRestoring = false;
+                this.updateUndoRedoButtons();
+            },
+            updateUndoRedoButtons() {
+                const canUndo = this.historyIndex > 0;
+                const canRedo = this.historyIndex < this.history.length - 1;
+                ['btn-undo','btn-undo-mobile'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !canUndo; });
+                ['btn-redo','btn-redo-mobile'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !canRedo; });
+            },
+
+            initBackground() {
+                const canvas = document.getElementById('bg-canvas');
+                if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                const ctx = canvas.getContext('2d');
+                let w, h, orbs = [], mouse = { x: 0, y: 0 };
+                function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+                resize();
+                window.addEventListener('resize', resize);
+                for (let i = 0; i < 12; i++) {
+                    orbs.push({ x: Math.random()*w, y: Math.random()*h, r: 50+Math.random()*100, vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25, hue: 90+Math.random()*50 });
+                }
+                window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+                function draw() {
+                    ctx.clearRect(0, 0, w, h);
+                    const isDark = document.documentElement.classList.contains('dark');
+                    orbs.forEach(o => {
+                        o.x += o.vx; o.y += o.vy;
+                        if (o.x < -o.r) o.x = w + o.r; if (o.x > w + o.r) o.x = -o.r;
+                        if (o.y < -o.r) o.y = h + o.r; if (o.y > h + o.r) o.y = -o.r;
+                        const dx = mouse.x - o.x, dy = mouse.y - o.y, dist = Math.sqrt(dx*dx+dy*dy)||1;
+                        if (dist < 300) { o.x -= dx*0.0007; o.y -= dy*0.0007; }
+                        const grad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+                        if (isDark) { grad.addColorStop(0, `hsla(${o.hue},35%,40%,0.1)`); grad.addColorStop(1, `hsla(${o.hue},30%,30%,0)`); }
+                        else { grad.addColorStop(0, `hsla(${o.hue},40%,65%,0.16)`); grad.addColorStop(1, `hsla(${o.hue},40%,70%,0)`); }
+                        ctx.fillStyle = grad;
+                        ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+                    });
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            },
+
+            nextOnboard(step) {
+                ['1','2','3'].forEach(s => document.getElementById(`onboard-step-${s}`).classList.add('hide'));
+                document.getElementById(`onboard-step-${step}`).classList.remove('hide');
+                ['1','2','3'].forEach(s => {
+                    document.getElementById(`dot-${s}`).className = s == step ? 'w-2 h-2 rounded-full bg-accent' : 'w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-600';
+                });
+            },
+            finishOnboard() {
+                this.state.onboarded = true;
+                this.saveState();
+                document.getElementById('onboarding').classList.add('hide');
+                this.openModal('addBookModal');
+            },
+
+            loadState() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        this.state = JSON.parse(stored);
+                        if (!this.state.sessions) this.state.sessions = [];
+                        if (typeof this.state.darkMode === 'undefined') this.state.darkMode = false;
+                        if (typeof this.state.onboarded === 'undefined') this.state.onboarded = false;
+                        if (typeof this.state.lastExport === 'undefined') this.state.lastExport = null;
+                    } catch (e) { this.state = deepClone(defaultState); }
+                } else this.state = deepClone(defaultState);
+            },
+            saveState(recordHistory = true) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); }
+                catch (e) { alert('Could not save. Storage may be full or blocked.'); }
+                if (recordHistory) this.pushHistory();
+                this.render();
+            },
+            withLoading(action) {
+                const loader = document.getElementById('loader-overlay');
+                loader.classList.remove('hide');
+                setTimeout(() => { try { action(); } finally { loader.classList.add('hide'); } }, 120);
+            },
+            navigate(view) {
+                this.withLoading(() => {
+                    this.state.currentView = view;
+                    if (view !== 'book') this.state.activeBookId = null;
+                    document.getElementById('global-search').value = '';
+                    this.state.searchQuery = '';
+                    this.saveState(false);
+                });
+            },
+            openBook(id) {
+                this.withLoading(() => {
+                    this.state.activeBookId = id;
+                    this.state.currentView = 'book';
+                    this.saveState(false);
+                });
+            },
+            handleSearch() {
+                this.state.searchQuery = document.getElementById('global-search').value.toLowerCase();
+                this.render();
+            },
+
+            render() {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hide'));
+                const viewEl = document.getElementById(`view-${this.state.currentView}`);
+                if (viewEl) viewEl.classList.remove('hide');
+                ['dashboard','quotes','faq'].forEach(v => {
+                    const el = document.getElementById(`nav-${v}`);
+                    if (el) {
+                        if (this.state.currentView === v || (this.state.currentView === 'book' && v === 'dashboard')) {
+                            el.classList.add('bg-book-800','text-white'); el.classList.remove('text-stone-300');
+                        } else {
+                            el.classList.remove('bg-book-800','text-white'); el.classList.add('text-stone-300');
+                        }
+                    }
+                });
+                if (this.state.currentView === 'dashboard') this.renderDashboard();
+                if (this.state.currentView === 'book') this.renderBookDetail();
+                if (this.state.currentView === 'quotes') this.renderGlobalQuotes();
+                this.updateUndoRedoButtons();
+            },
+
+            updateExportReminder() {
+                const el = document.getElementById('export-reminder');
+                const text = document.getElementById('export-reminder-text');
+                if (!el || !text) return;
+                const last = this.state.lastExport ? new Date(this.state.lastExport).getTime() : null;
+                const days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+                if (!last) { text.textContent = 'You haven’t exported a backup yet.'; el.classList.remove('hide'); }
+                else if (days >= 30) { text.textContent = `Last export was ${days} days ago. Consider a fresh backup.`; el.classList.remove('hide'); }
+                else el.classList.add('hide');
+            },
+
+            renderCharts() {
+                // 12-month performance only (7-day and status charts removed)
+                const months = [];
+                for (let i = 11; i >= 0; i--) {
+                    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); d.setHours(0,0,0,0);
+                    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(undefined,{month:'short'}), pages: 0 });
+                }
+                this.state.sessions.forEach(s => {
+                    const sd = new Date(s.date);
+                    const key = `${sd.getFullYear()}-${sd.getMonth()}`;
+                    const match = months.find(m => m.key === key);
+                    if (match) match.pages += s.pages;
+                });
+                const maxYear = Math.max(...months.map(m => m.pages), 1);
+                document.getElementById('year-chart').innerHTML = months.map(m => {
+                    const h = Math.max(3, (m.pages / maxYear) * 100);
+                    return `<div class="flex-1 flex flex-col justify-end items-center" title="${m.label}: ${m.pages} pages"><div class="chart-bar w-full max-w-[18px] bg-accent/70 rounded-t" style="height:${h}%"></div></div>`;
+                }).join('');
+                document.getElementById('year-chart-labels').innerHTML = months.map(m => `<span class="truncate">${m.label}</span>`).join('');
+
+                const genreCounts = {};
+                this.state.books.forEach(b => {
+                    const g = (b.genre || '').trim() || 'Unspecified';
+                    genreCounts[g] = (genreCounts[g] || 0) + 1;
+                });
+                const genreSorted = Object.entries(genreCounts).sort((a,b) => b[1]-a[1]).slice(0, 6);
+                const maxGenre = Math.max(...genreSorted.map(g => g[1]), 1);
+                document.getElementById('genre-chart').innerHTML = genreSorted.length
+                    ? genreSorted.map(([name, count]) => `
+                        <div>
+                            <div class="flex justify-between text-xs mb-0.5"><span class="text-stone-600 dark:text-stone-300 truncate max-w-[70%]">${escapeHTML(name)}</span><span class="text-stone-500">${count}</span></div>
+                            <div class="h-2 bg-stone-200 dark:bg-book-800 rounded-full overflow-hidden"><div class="status-bar h-full bg-accent/80 rounded-full" style="width:${(count/maxGenre)*100}%"></div></div>
+                        </div>`).join('')
+                    : '<p class="text-xs text-stone-400 italic">Add books with genres to see this chart.</p>';
+
+                const formatCounts = {};
+                this.state.books.forEach(b => {
+                    const f = (b.mediaFormat || '').trim() || 'Unspecified';
+                    formatCounts[f] = (formatCounts[f] || 0) + 1;
+                });
+                const formatSorted = Object.entries(formatCounts).sort((a,b) => b[1]-a[1]);
+                const maxFormat = Math.max(...formatSorted.map(f => f[1]), 1);
+                document.getElementById('format-chart').innerHTML = formatSorted.length
+                    ? formatSorted.map(([name, count]) => `
+                        <div>
+                            <div class="flex justify-between text-xs mb-0.5"><span class="text-stone-600 dark:text-stone-300">${escapeHTML(name)}</span><span class="text-stone-500">${count}</span></div>
+                            <div class="h-2 bg-stone-200 dark:bg-book-800 rounded-full overflow-hidden"><div class="status-bar h-full bg-warm/90 rounded-full" style="width:${(count/maxFormat)*100}%"></div></div>
+                        </div>`).join('')
+                    : '<p class="text-xs text-stone-400 italic">Add books with formats to see this chart.</p>';
+            },
+
+            renderDashboard() {
+                const readBooks = this.state.books.filter(b => b.status === 'read').length;
+                const activeBooks = this.state.books.filter(b => b.status === 'reading').length;
+                const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                let recentPages = 0, totalPagesRead = 0;
+                this.state.sessions.forEach(s => {
+                    totalPagesRead += s.pages;
+                    if (new Date(s.date) >= sevenDaysAgo) recentPages += s.pages;
+                });
+                document.getElementById('stat-total-books').textContent = readBooks;
+                document.getElementById('stat-total-pages').textContent = totalPagesRead;
+                document.getElementById('stat-pace').innerHTML = `${Math.round(recentPages/7)} <span class="text-sm font-normal text-stone-500">pg/day</span>`;
+                document.getElementById('stat-active').textContent = activeBooks;
+                this.updateExportReminder();
+                this.renderCharts();
+
+                const cols = { toread: [], reading: [], read: [] };
+                const filtered = this.state.searchQuery
+                    ? this.state.books.filter(b => b.title.toLowerCase().includes(this.state.searchQuery) || b.author.toLowerCase().includes(this.state.searchQuery) || (b.genre||'').toLowerCase().includes(this.state.searchQuery))
+                    : this.state.books;
+                filtered.forEach(b => { if (cols[b.status]) cols[b.status].push(b); });
+
+                Object.keys(cols).forEach(status => {
+                    document.getElementById(`count-${status}`).textContent = cols[status].length;
+                    const container = document.getElementById(`col-${status}`);
+                    if (cols[status].length === 0) {
+                        container.innerHTML = `<div class="text-center p-6 border-2 border-dashed border-stone-200 dark:border-book-800 rounded-xl"><p class="text-sm text-stone-400 mb-3">No books here</p>${status==='toread'?`<button onclick="app.openModal('addBookModal')" class="text-sm bg-accent text-white py-2 px-4 rounded-lg font-medium">Add a book</button>`:''}</div>`;
+                    } else {
+                        container.innerHTML = cols[status].map(book => `
+                            <div role="listitem" onclick="app.openBook('${escapeHTML(book.id)}')" class="bg-white dark:bg-book-800 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-book-800 cursor-pointer hover:shadow-md hover:border-accent/40 transition-all group live-card" tabindex="0" onkeydown="if(event.key==='Enter')app.openBook('${escapeHTML(book.id)}')">
+                                <h4 class="font-bold text-stone-800 dark:text-stone-100 mb-1 leading-tight group-hover:text-accent">${escapeHTML(book.title)}</h4>
+                                <p class="text-xs text-stone-500 dark:text-stone-400">${escapeHTML(book.author)}</p>
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    ${book.genre ? `<span class="text-[10px] bg-accent/15 text-accent px-1.5 py-0.5 rounded">${escapeHTML(book.genre)}</span>` : ''}
+                                    ${book.mediaFormat ? `<span class="text-[10px] bg-warm/20 text-stone-600 dark:text-stone-300 px-1.5 py-0.5 rounded">${escapeHTML(book.mediaFormat)}</span>` : ''}
+                                    ${book.yearPublished ? `<span class="text-[10px] text-stone-400">${escapeHTML(book.yearPublished)}</span>` : ''}
+                                </div>
+                                <div class="mt-2 flex items-center justify-between text-xs text-stone-400">
+                                    <span><i class="fas fa-file-lines mr-1"></i> ${book.totalPages} pg</span>
+                                    <span>${book.quotes ? book.quotes.length : 0} <i class="fas fa-quote-right ml-0.5"></i></span>
+                                </div>
+                            </div>`).join('');
+                    }
+                });
+            },
+
+            renderBookDetail() {
+                const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                if (!book) { this.navigate('dashboard'); return; }
+                document.getElementById('detail-title').textContent = book.title;
+                document.getElementById('detail-author').textContent = book.author;
+                document.getElementById('detail-status').value = book.status;
+                const meta = [];
+                if (book.genre) meta.push(`<span class="bg-accent/15 text-accent px-2 py-0.5 rounded-full">${escapeHTML(book.genre)}</span>`);
+                if (book.yearPublished) meta.push(`<span class="bg-stone-100 dark:bg-book-800 text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded-full">${escapeHTML(book.yearPublished)}</span>`);
+                if (book.mediaFormat) meta.push(`<span class="bg-warm/20 text-stone-700 dark:text-stone-200 px-2 py-0.5 rounded-full">${escapeHTML(book.mediaFormat)}</span>`);
+                document.getElementById('detail-meta').innerHTML = meta.join('') || '<span class="text-stone-400">No genre / year / format set</span>';
+                document.getElementById('notes-editor').value = book.notes || '';
+                this.toggleNotesMode('preview');
+                this.renderBookQuotes(book);
+            },
+
+            toggleNotesMode(mode) {
+                const editor = document.getElementById('notes-editor');
+                const preview = document.getElementById('notes-preview');
+                const btnEdit = document.getElementById('btn-notes-edit');
+                const btnPreview = document.getElementById('btn-notes-preview');
+                if (mode === 'edit') {
+                    editor.classList.remove('hide'); preview.classList.add('hide');
+                    btnEdit.classList.add('bg-white','dark:bg-book-800','border-stone-200','shadow-sm');
+                    btnPreview.classList.add('text-stone-600','border-transparent');
+                    btnPreview.classList.remove('bg-white','dark:bg-book-800','shadow-sm');
+                    editor.focus();
+                } else {
+                    preview.innerHTML = marked.parse(editor.value || '') || '<p class="text-stone-400 italic">No notes yet. Switch to Edit to start.</p>';
+                    editor.classList.add('hide'); preview.classList.remove('hide');
+                    btnPreview.classList.add('bg-white','dark:bg-book-800','border-stone-200','shadow-sm');
+                    btnEdit.classList.add('text-stone-600','border-transparent');
+                    btnEdit.classList.remove('bg-white','dark:bg-book-800','shadow-sm');
+                }
+            },
+            saveNotes() {
+                this.withLoading(() => {
+                    const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                    if (book) { book.notes = document.getElementById('notes-editor').value; this.saveState(true); this.toggleNotesMode('preview'); }
+                });
+            },
+            renderBookQuotes(book) {
+                const container = document.getElementById('book-quotes-list');
+                const quotes = book.quotes || [];
+                container.innerHTML = quotes.length ? quotes.map(q => `
+                    <div role="listitem" class="bg-white dark:bg-book-800 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-book-800 relative group">
+                        <button onclick="app.promptDeleteQuote('${escapeHTML(q.id)}')" class="absolute top-2 right-2 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 p-1.5" aria-label="Delete quote"><i class="fas fa-trash"></i></button>
+                        <p class="text-stone-700 dark:text-stone-300 italic text-sm">"${escapeHTML(q.text)}"</p>
+                        ${q.page ? `<p class="text-xs text-stone-400 mt-2 text-right">Page ${escapeHTML(q.page)}</p>` : ''}
+                    </div>`).reverse().join('') : `<p class="text-sm text-stone-400 italic text-center py-6">No quotes yet.</p>`;
+            },
+            renderGlobalQuotes() {
+                const container = document.getElementById('global-quotes-list');
+                let allQuotes = [];
+                this.state.books.forEach(book => {
+                    if (book.quotes) book.quotes.forEach(q => {
+                        if (!this.state.searchQuery || q.text.toLowerCase().includes(this.state.searchQuery) || book.title.toLowerCase().includes(this.state.searchQuery))
+                            allQuotes.push({ ...q, bookTitle: book.title, bookAuthor: book.author, bookId: book.id });
+                    });
+                });
+                container.innerHTML = allQuotes.length ? allQuotes.map(q => `
+                    <div role="listitem" class="bg-white/90 dark:bg-book-900/90 p-5 rounded-2xl shadow-sm border border-stone-200 dark:border-book-800 flex flex-col h-full live-card">
+                        <i class="fas fa-quote-left text-accent/25 text-2xl mb-3"></i>
+                        <p class="text-stone-800 dark:text-stone-200 italic flex-1">"${escapeHTML(q.text)}"</p>
+                        <div class="mt-4 pt-3 border-t border-stone-100 dark:border-book-800">
+                            <button onclick="app.openBook('${escapeHTML(q.bookId)}')" class="text-sm font-bold text-stone-700 dark:text-stone-300 hover:text-accent text-left w-full truncate">${escapeHTML(q.bookTitle)}</button>
+                            <p class="text-xs text-stone-500">${escapeHTML(q.bookAuthor)} ${q.page ? `• pg ${escapeHTML(q.page)}` : ''}</p>
+                        </div>
+                    </div>`).reverse().join('') : `<div class="col-span-full text-center text-stone-400 py-12"><i class="fas fa-quote-right text-3xl mb-3 block"></i> No matching quotes.</div>`;
+            },
+
+            addBook(e) {
+                e.preventDefault();
+                this.withLoading(() => {
+                    const yearVal = document.getElementById('add-year').value;
+                    this.state.books.push({
+                        id: Date.now().toString(),
+                        title: document.getElementById('add-title').value.trim(),
+                        author: document.getElementById('add-author').value.trim(),
+                        totalPages: parseInt(document.getElementById('add-pages').value, 10),
+                        yearPublished: yearVal ? parseInt(yearVal, 10) : null,
+                        genre: document.getElementById('add-genre').value.trim() || '',
+                        mediaFormat: document.getElementById('add-format').value || '',
+                        status: document.getElementById('add-status').value,
+                        notes: '',
+                        quotes: [],
+                        addedAt: new Date().toISOString()
+                    });
+                    this.saveState(true);
+                    this.closeModal('addBookModal');
+                    e.target.reset();
+                });
+            },
+            updateBookStatus(newStatus) {
+                const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                if (book) { book.status = newStatus; this.saveState(true); }
+            },
+            promptDeleteBook() {
+                this.openConfirm('Delete this book?', 'Notes and quotes for this book will be permanently removed from this browser.', () => {
+                    this.withLoading(() => {
+                        this.state.books = this.state.books.filter(b => b.id !== this.state.activeBookId);
+                        this.state.activeBookId = null;
+                        this.saveState(true);
+                        this.navigate('dashboard');
+                    });
+                });
+            },
+            promptDeleteQuote(quoteId) {
+                this.openConfirm('Delete this quote?', 'This cannot be undone.', () => {
+                    this.withLoading(() => {
+                        const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                        if (book && book.quotes) { book.quotes = book.quotes.filter(q => q.id !== quoteId); this.saveState(true); }
+                    });
+                });
+            },
+            promptClearAll() {
+                this.openConfirm('Clear all data?', 'This permanently deletes every book, note, quote, and setting stored by mbreading.online in this browser.', () => {
+                    localStorage.removeItem(STORAGE_KEY);
+                    this.state = deepClone(defaultState);
+                    this.state.onboarded = true;
+                    this.history = []; this.historyIndex = -1;
+                    this.pushHistory(true);
+                    this.saveState(false);
+                    this.navigate('dashboard');
+                    alert('All local data cleared.');
+                });
+            },
+            logSession(e) {
+                e.preventDefault();
+                this.withLoading(() => {
+                    this.state.sessions.push({ id: Date.now().toString(), date: new Date().toISOString(), pages: parseInt(document.getElementById('session-pages').value, 10) });
+                    this.saveState(true);
+                    this.closeModal('logSessionModal');
+                    e.target.reset();
+                });
+            },
+            addQuote(e) {
+                e.preventDefault();
+                this.withLoading(() => {
+                    const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                    if (book) {
+                        if (!book.quotes) book.quotes = [];
+                        book.quotes.push({ id: Date.now().toString(), text: document.getElementById('quote-text').value.trim(), page: document.getElementById('quote-page').value || null });
+                        this.saveState(true);
+                        this.closeModal('addQuoteModal');
+                        e.target.reset();
+                    }
+                });
+            },
+            exportCSV() {
+                this.withLoading(() => {
+                    let csv = "ID,Type,BookID,Title,Author,TotalPages,Status,Genre,YearPublished,MediaFormat,QuoteText,QuotePage\n";
+                    this.state.books.forEach(b => {
+                        csv += `"${b.id}","Book","","${String(b.title).replace(/"/g,'""')}","${String(b.author).replace(/"/g,'""')}",${b.totalPages},"${b.status}","${String(b.genre||'').replace(/"/g,'""')}","${b.yearPublished||''}","${String(b.mediaFormat||'').replace(/"/g,'""')}","",""\n`;
+                        if (b.quotes) b.quotes.forEach(q => {
+                            csv += `"${q.id}","Quote","${b.id}","","","","","","","","${String(q.text).replace(/"/g,'""')}","${q.page||''}"\n`;
+                        });
+                    });
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `mbreading-export_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                    this.state.lastExport = new Date().toISOString();
+                    this.saveState(false);
+                });
+            },
+            importCSV(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                this.withLoading(() => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const lines = e.target.result.split('\n').filter(l => l.trim());
+                            if (lines.length < 2) { alert('File appears empty or invalid.'); return; }
+                            let importedBooks = [], importedQuotes = [];
+                            for (let i = 1; i < lines.length; i++) {
+                                const regex = /"(?:[^"\\]|\\.)*"|[^,]+/g;
+                                let match, row = [];
+                                while (match = regex.exec(lines[i])) row.push(match[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
+                                if (row[1] === 'Book') {
+                                    importedBooks.push({
+                                        id: row[0] || Date.now().toString()+i,
+                                        title: row[3] || 'Untitled',
+                                        author: row[4] || '',
+                                        totalPages: parseInt(row[5],10) || 1,
+                                        status: ['toread','reading','read'].includes(row[6]) ? row[6] : 'toread',
+                                        genre: row[7] || '',
+                                        yearPublished: row[8] ? parseInt(row[8],10) : null,
+                                        mediaFormat: row[9] || '',
+                                        notes: '', quotes: [], addedAt: new Date().toISOString()
+                                    });
+                                } else if (row[1] === 'Quote') {
+                                    importedQuotes.push({ id: row[0], bookId: row[2], text: row[10] || row[7] || '', page: row[11] || row[8] });
+                                }
+                            }
+                            importedBooks.forEach(b => {
+                                b.quotes = importedQuotes.filter(q => q.bookId === b.id).map(q => ({ id: q.id, text: q.text, page: q.page }));
+                            });
+                            const existingIds = this.state.books.map(b => b.id);
+                            const newBooks = importedBooks.filter(b => !existingIds.includes(b.id));
+                            this.state.books = [...this.state.books, ...newBooks];
+                            this.saveState(true);
+                            alert(`Imported ${newBooks.length} new books.`);
+                        } catch (err) { alert('Could not import file.'); }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                });
+            },
+            toggleTheme() {
+                this.state.darkMode = !this.state.darkMode;
+                this.applyTheme();
+                this.saveState(false);
+            },
+            applyTheme() {
+                const html = document.documentElement;
+                const iconD = document.getElementById('theme-icon');
+                const iconM = document.getElementById('theme-icon-mobile');
+                if (this.state.darkMode) {
+                    html.classList.add('dark');
+                    if (iconD) iconD.className = 'fas fa-sun';
+                    if (iconM) iconM.className = 'fas fa-sun';
+                } else {
+                    html.classList.remove('dark');
+                    if (iconD) iconD.className = 'fas fa-moon';
+                    if (iconM) iconM.className = 'fas fa-moon';
+                }
+            },
+            toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('translate-x-full'); },
+            checkCookie() {
+                if (!this.state.cookieAccepted) {
+                    setTimeout(() => {
+                        const banner = document.getElementById('cookie-banner');
+                        banner.classList.remove('hide');
+                        setTimeout(() => banner.classList.remove('translate-y-32'), 50);
+                    }, 600);
+                }
+            },
+            dismissCookie() {
+                this.state.cookieAccepted = true;
+                this.saveState(false);
+                const banner = document.getElementById('cookie-banner');
+                banner.classList.add('translate-y-32');
+                setTimeout(() => banner.classList.add('hide'), 300);
+            },
+            initScrollListener() {
+                const area = document.getElementById('scroll-area');
+                const prog = document.getElementById('scroll-progress');
+                const btt = document.getElementById('back-to-top');
+                area.addEventListener('scroll', () => {
+                    const scrollTop = area.scrollTop;
+                    const scrollHeight = area.scrollHeight - area.clientHeight;
+                    prog.style.width = (scrollHeight > 0 ? (scrollTop/scrollHeight)*100 : 0) + '%';
+                    if (scrollTop > 200) btt.classList.remove('translate-y-20','opacity-0');
+                    else btt.classList.add('translate-y-20','opacity-0');
+                });
+            },
+            scrollToTop() { document.getElementById('scroll-area').scrollTo({ top: 0, behavior: 'smooth' }); },
+            openModal(id) {
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.classList.remove('hide');
+                    const first = modal.querySelector('input, textarea, button');
+                    if (first) setTimeout(() => first.focus(), 50);
+                }
+            },
+            closeModal(id) { const m = document.getElementById(id); if (m) m.classList.add('hide'); },
+            openConfirm(title, message, callback) {
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+                this.confirmCallback = callback;
+                document.getElementById('confirm-action-btn').onclick = () => { this.closeConfirm(); if (this.confirmCallback) this.confirmCallback(); };
+                this.openModal('confirmModal');
+            },
+            closeConfirm() { this.closeModal('confirmModal'); this.confirmCallback = null; }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); app.undo(); }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); app.redo(); }
+        });
+    </script>
+</body>
+</html>
