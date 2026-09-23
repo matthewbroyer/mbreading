@@ -47,7 +47,7 @@
         .markdown-body blockquote { border-left: 4px solid #c4a574; padding-left: 1em; color: #5a635e; font-style: italic; }
         html.dark .markdown-body blockquote { border-color: #5c8a6e; color: #a8b5ae; }
         .hide { display: none !important; }
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d4d9d4; border-radius: 4px; }
         html.dark ::-webkit-scrollbar-thumb { background: #3a4a42; }
@@ -59,7 +59,6 @@
             * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
             #bg-canvas { display: none; }
         }
-        .chart-bar { transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
         .status-bar { transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
         .live-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
         .live-card:hover { transform: translateY(-2px); }
@@ -69,6 +68,8 @@
         .hover\:bg-accentHover:hover { background-color: #4a7359; }
         .text-accent { color: #5c8a6e; }
         .focus\:ring-accent:focus { --tw-ring-color: #5c8a6e; }
+        
+        .scrollbar-thin::-webkit-scrollbar { height: 6px; }
     </style>
 </head>
 <body class="font-sans antialiased h-screen flex overflow-hidden transition-colors duration-200">
@@ -201,7 +202,7 @@
             <div class="flex items-center md:hidden gap-2">
                 <svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true">
                     <rect width="64" height="64" rx="16" fill="#5c8a6e"/>
-                    <path d="M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-.9-2-2V18z" fill="#f7f5f0"/>
+                    <path d="M14 18c0-1.1.9-2 2-2h12c3.3 0 6 2.2 6 5v27c-2.2-1.5-4.5-2.2-6.5-2.2H16c-1.1 0-2-2-2-2V18z" fill="#f7f5f0"/>
                     <path d="M50 18c0-1.1-.9-2-2-2H36c-3.3 0-6 2.2-6 5v27c2.2-1.5 4.5-2.2 6.5-2.2H48c1.1 0 2-.9 2-2V18z" fill="#e8e4db"/>
                     <path d="M32 21v27" stroke="#5c8a6e" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
                     <circle cx="46" cy="14" r="5" fill="#c4a574"/>
@@ -239,7 +240,7 @@
                     <button onclick="app.exportCSV()" class="text-sm bg-warm hover:opacity-90 text-stone-900 py-2 px-4 rounded-lg font-medium whitespace-nowrap">Export now</button>
                 </div>
 
-                <!-- Reading Pace: stats only (7-day chart & status chart removed) -->
+                <!-- Reading Pace -->
                 <section class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200/80 dark:border-book-800 p-5 live-card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100"><i class="fas fa-chart-line mr-2 text-accent"></i> Reading Pace</h2>
@@ -265,15 +266,16 @@
                     </div>
                 </section>
 
-                <!-- Insights: year + genres + formats -->
+                <!-- Insights & Activity Tracker -->
                 <section class="bg-white/90 dark:bg-book-900/90 backdrop-blur rounded-2xl shadow-sm border border-stone-200/80 dark:border-book-800 p-5 live-card">
-                    <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100 mb-5"><i class="fas fa-chart-pie mr-2 text-accent"></i> Insights</h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div>
-                            <p class="text-xs font-medium text-stone-500 mb-3">Pages logged (last 12 months)</p>
-                            <div class="flex items-end gap-1 h-32" id="year-chart"></div>
-                            <div class="flex justify-between mt-1.5 text-[9px] text-stone-400 overflow-hidden" id="year-chart-labels"></div>
-                        </div>
+                    <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100 mb-5"><i class="fas fa-chart-pie mr-2 text-accent"></i> Insights & Activity</h2>
+                    
+                    <div class="mb-8">
+                        <p class="text-xs font-medium text-stone-500 mb-2">Reading Activity (Past Year)</p>
+                        <div id="activity-heatmap" class="w-full"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
                             <p class="text-xs font-medium text-stone-500 mb-3">Top genres</p>
                             <div class="space-y-2" id="genre-chart"></div>
@@ -287,7 +289,15 @@
 
                 <section>
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100"><i class="fas fa-bars-staggered mr-2 text-accent"></i> Book Pipeline</h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-base font-semibold text-stone-800 dark:text-stone-100"><i class="fas fa-bars-staggered mr-2 text-accent"></i> Book Pipeline</h2>
+                            <select id="sort-pipeline" onchange="app.updateSort(this.value)" class="text-xs border border-stone-200 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-500 rounded-lg py-1.5 px-2 outline-none focus:ring-1 focus:ring-accent">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="titleAZ">Title (A-Z)</option>
+                                <option value="authorAZ">Author (A-Z)</option>
+                            </select>
+                        </div>
                         <button onclick="app.openModal('addBookModal')" class="md:hidden text-sm bg-accent text-white py-2 px-4 rounded-lg font-medium"><i class="fas fa-plus mr-1"></i> Add</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -325,6 +335,7 @@
                                 <option value="reading">Reading</option>
                                 <option value="read">Finished</option>
                             </select>
+                            <button onclick="app.openEditBook()" class="text-stone-500 hover:bg-stone-100 dark:hover:bg-book-800 border border-stone-300 dark:border-book-800 p-2.5 rounded-xl" aria-label="Edit book"><i class="fas fa-edit"></i></button>
                             <button onclick="app.promptDeleteBook()" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-2.5 rounded-xl" aria-label="Delete book"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
@@ -395,6 +406,7 @@
     </main>
     </div>
 
+    <!-- Confirm Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[70] hide" role="dialog" aria-modal="true">
         <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 border border-stone-200 dark:border-book-800">
             <h3 class="text-lg font-bold mb-2 text-stone-800 dark:text-stone-100" id="confirm-title">Are you sure?</h3>
@@ -406,6 +418,7 @@
         </div>
     </div>
 
+    <!-- Add Book Modal -->
     <div id="addBookModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
         <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 border border-stone-200 dark:border-book-800 max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Add a book</h3>
@@ -466,6 +479,64 @@
         </div>
     </div>
 
+    <!-- Edit Book Modal -->
+    <div id="editBookModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
+        <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 border border-stone-200 dark:border-book-800 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Edit book</h3>
+            <form id="form-edit-book" onsubmit="app.saveEditBook(event)" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label for="edit-title" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Title</label>
+                    <input type="text" id="edit-title" required autocomplete="off" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div>
+                    <label for="edit-author" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Author</label>
+                    <input type="text" id="edit-author" required autocomplete="off" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-pages" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Total pages</label>
+                        <input type="number" id="edit-pages" min="1" required class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                    </div>
+                    <div>
+                        <label for="edit-year" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Year published</label>
+                        <input type="number" id="edit-year" min="1000" max="2100" placeholder="e.g. 2011" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-genre" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Genre</label>
+                    <input type="text" id="edit-genre" list="genre-list" placeholder="e.g. Fiction, History, Sci-Fi" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-format" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Media format</label>
+                        <select id="edit-format" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                            <option value="">Select…</option>
+                            <option value="Paperback">Paperback</option>
+                            <option value="Hardcover">Hardcover</option>
+                            <option value="Ebook">Ebook</option>
+                            <option value="Audiobook">Audiobook</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-status" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Status</label>
+                        <select id="edit-status" class="w-full border border-stone-300 dark:border-book-800 bg-white dark:bg-book-800 dark:text-stone-100 rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-accent">
+                            <option value="toread">To Read</option>
+                            <option value="reading">Reading</option>
+                            <option value="read">Finished</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end gap-3">
+                    <button type="button" onclick="app.closeModal('editBookModal')" class="px-4 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-book-800 rounded-xl">Cancel</button>
+                    <button type="submit" class="btn-primary px-5 py-2.5 text-sm font-medium text-white bg-accent hover:bg-accentHover rounded-xl">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Log Session Modal -->
     <div id="logSessionModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
         <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 border border-stone-200 dark:border-book-800">
             <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Log pages read</h3>
@@ -482,6 +553,7 @@
         </div>
     </div>
 
+    <!-- Add Quote Modal -->
     <div id="addQuoteModal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] hide" role="dialog" aria-modal="true">
         <div class="bg-paper dark:bg-book-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 m-4 border border-stone-200 dark:border-book-800">
             <h3 class="text-lg font-bold mb-5 text-stone-800 dark:text-stone-100">Add quote</h3>
@@ -506,7 +578,7 @@
         const STORAGE_KEY = 'mbreading_state_v1';
         const HISTORY_LIMIT = 30;
         const defaultState = {
-            books: [], sessions: [], currentView: 'dashboard', activeBookId: null,
+            books: [], sessions: [], currentView: 'dashboard', activeBookId: null, sortBy: 'newest',
             darkMode: false, cookieAccepted: false, searchQuery: '', onboarded: false, lastExport: null
         };
 
@@ -632,6 +704,7 @@
                     try {
                         this.state = JSON.parse(stored);
                         if (!this.state.sessions) this.state.sessions = [];
+                        if (!this.state.sortBy) this.state.sortBy = 'newest';
                         if (typeof this.state.darkMode === 'undefined') this.state.darkMode = false;
                         if (typeof this.state.onboarded === 'undefined') this.state.onboarded = false;
                         if (typeof this.state.lastExport === 'undefined') this.state.lastExport = null;
@@ -702,24 +775,7 @@
             },
 
             renderCharts() {
-                // 12-month performance only (7-day and status charts removed)
-                const months = [];
-                for (let i = 11; i >= 0; i--) {
-                    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); d.setHours(0,0,0,0);
-                    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(undefined,{month:'short'}), pages: 0 });
-                }
-                this.state.sessions.forEach(s => {
-                    const sd = new Date(s.date);
-                    const key = `${sd.getFullYear()}-${sd.getMonth()}`;
-                    const match = months.find(m => m.key === key);
-                    if (match) match.pages += s.pages;
-                });
-                const maxYear = Math.max(...months.map(m => m.pages), 1);
-                document.getElementById('year-chart').innerHTML = months.map(m => {
-                    const h = Math.max(3, (m.pages / maxYear) * 100);
-                    return `<div class="flex-1 flex flex-col justify-end items-center" title="${m.label}: ${m.pages} pages"><div class="chart-bar w-full max-w-[18px] bg-accent/70 rounded-t" style="height:${h}%"></div></div>`;
-                }).join('');
-                document.getElementById('year-chart-labels').innerHTML = months.map(m => `<span class="truncate">${m.label}</span>`).join('');
+                this.renderActivityTracker();
 
                 const genreCounts = {};
                 this.state.books.forEach(b => {
@@ -752,6 +808,49 @@
                     : '<p class="text-xs text-stone-400 italic">Add books with formats to see this chart.</p>';
             },
 
+            renderActivityTracker() {
+                const tracker = document.getElementById('activity-heatmap');
+                if(!tracker) return;
+                
+                const today = new Date();
+                const oneYearAgo = new Date(today);
+                oneYearAgo.setDate(today.getDate() - 364); 
+                // Adjust to start exactly on the previous Sunday
+                oneYearAgo.setDate(oneYearAgo.getDate() - oneYearAgo.getDay()); 
+                
+                const sessionMap = {};
+                this.state.sessions.forEach(s => {
+                    const d = new Date(s.date);
+                    const dateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    sessionMap[dateStr] = (sessionMap[dateStr] || 0) + s.pages;
+                });
+
+                let current = new Date(oneYearAgo);
+                let html = '<div class="grid grid-flow-col gap-[2px] sm:gap-1 w-full" style="grid-template-rows: repeat(7, 1fr); grid-auto-columns: 1fr;">';
+                
+                while(current <= today) {
+                    const dateStr = new Date(current.getTime() - (current.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    const pages = sessionMap[dateStr] || 0;
+                    
+                    let colorClass = 'bg-stone-200 dark:bg-book-800/50'; 
+                    if (pages > 0 && pages <= 15) colorClass = 'bg-accent/40';
+                    else if (pages > 15 && pages <= 40) colorClass = 'bg-accent/70';
+                    else if (pages > 40) colorClass = 'bg-accent';
+
+                    html += `<div class="w-full aspect-square rounded-[1px] sm:rounded-[2px] ${colorClass}" title="${dateStr}: ${pages} pages"></div>`;
+                    
+                    current.setDate(current.getDate() + 1);
+                }
+                
+                html += '</div>';
+                tracker.innerHTML = html;
+            },
+
+            updateSort(val) {
+                this.state.sortBy = val;
+                this.saveState(false);
+            },
+
             renderDashboard() {
                 const readBooks = this.state.books.filter(b => b.status === 'read').length;
                 const activeBooks = this.state.books.filter(b => b.status === 'reading').length;
@@ -768,10 +867,22 @@
                 this.updateExportReminder();
                 this.renderCharts();
 
+                const sortSelect = document.getElementById('sort-pipeline');
+                if (sortSelect) sortSelect.value = this.state.sortBy || 'newest';
+
                 const cols = { toread: [], reading: [], read: [] };
-                const filtered = this.state.searchQuery
+                
+                let filtered = this.state.searchQuery
                     ? this.state.books.filter(b => b.title.toLowerCase().includes(this.state.searchQuery) || b.author.toLowerCase().includes(this.state.searchQuery) || (b.genre||'').toLowerCase().includes(this.state.searchQuery))
-                    : this.state.books;
+                    : [...this.state.books];
+
+                filtered.sort((a, b) => {
+                    if (this.state.sortBy === 'titleAZ') return a.title.localeCompare(b.title);
+                    if (this.state.sortBy === 'authorAZ') return a.author.localeCompare(b.author);
+                    if (this.state.sortBy === 'oldest') return new Date(a.addedAt) - new Date(b.addedAt);
+                    return new Date(b.addedAt) - new Date(a.addedAt); // newest
+                });
+
                 filtered.forEach(b => { if (cols[b.status]) cols[b.status].push(b); });
 
                 Object.keys(cols).forEach(status => {
@@ -891,10 +1002,49 @@
                     e.target.reset();
                 });
             },
+            
+            openEditBook() {
+                const book = this.state.books.find(b => b.id === this.state.activeBookId);
+                if (!book) return;
+                
+                document.getElementById('edit-id').value = book.id;
+                document.getElementById('edit-title').value = book.title;
+                document.getElementById('edit-author').value = book.author;
+                document.getElementById('edit-pages').value = book.totalPages;
+                document.getElementById('edit-year').value = book.yearPublished || '';
+                document.getElementById('edit-genre').value = book.genre || '';
+                document.getElementById('edit-format').value = book.mediaFormat || '';
+                document.getElementById('edit-status').value = book.status;
+                
+                this.openModal('editBookModal');
+            },
+
+            saveEditBook(e) {
+                e.preventDefault();
+                this.withLoading(() => {
+                    const id = document.getElementById('edit-id').value;
+                    const book = this.state.books.find(b => b.id === id);
+                    if (book) {
+                        book.title = document.getElementById('edit-title').value.trim();
+                        book.author = document.getElementById('edit-author').value.trim();
+                        book.totalPages = parseInt(document.getElementById('edit-pages').value, 10);
+                        const yearVal = document.getElementById('edit-year').value;
+                        book.yearPublished = yearVal ? parseInt(yearVal, 10) : null;
+                        book.genre = document.getElementById('edit-genre').value.trim() || '';
+                        book.mediaFormat = document.getElementById('edit-format').value || '';
+                        book.status = document.getElementById('edit-status').value;
+                        
+                        this.saveState(true);
+                        this.closeModal('editBookModal');
+                    }
+                });
+            },
+
             updateBookStatus(newStatus) {
                 const book = this.state.books.find(b => b.id === this.state.activeBookId);
                 if (book) { book.status = newStatus; this.saveState(true); }
             },
+            
             promptDeleteBook() {
                 this.openConfirm('Delete this book?', 'Notes and quotes for this book will be permanently removed from this browser.', () => {
                     this.withLoading(() => {
@@ -905,6 +1055,7 @@
                     });
                 });
             },
+            
             promptDeleteQuote(quoteId) {
                 this.openConfirm('Delete this quote?', 'This cannot be undone.', () => {
                     this.withLoading(() => {
@@ -913,6 +1064,7 @@
                     });
                 });
             },
+            
             promptClearAll() {
                 this.openConfirm('Clear all data?', 'This permanently deletes every book, note, quote, and setting stored by mbreading.online in this browser.', () => {
                     localStorage.removeItem(STORAGE_KEY);
@@ -959,7 +1111,12 @@
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
-                    link.download = `mbreading-export_${new Date().toISOString().split('T')[0]}.csv`;
+                    
+                    // Format to local date to prevent late-night saving switching to tomorrow's UTC date
+                    const d = new Date();
+                    const localDateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                    link.download = `mbreading-export_${localDateStr}.csv`;
+                    
                     link.click();
                     this.state.lastExport = new Date().toISOString();
                     this.saveState(false);
@@ -1067,14 +1224,26 @@
                 }
             },
             closeModal(id) { const m = document.getElementById(id); if (m) m.classList.add('hide'); },
+            
             openConfirm(title, message, callback) {
                 document.getElementById('confirm-title').textContent = title;
                 document.getElementById('confirm-message').textContent = message;
                 this.confirmCallback = callback;
-                document.getElementById('confirm-action-btn').onclick = () => { this.closeConfirm(); if (this.confirmCallback) this.confirmCallback(); };
+                
+                // Fixed callback destruction to allow valid confirmation handling
+                document.getElementById('confirm-action-btn').onclick = () => { 
+                    this.closeModal('confirmModal'); 
+                    if (this.confirmCallback) {
+                        this.confirmCallback(); 
+                        this.confirmCallback = null;
+                    }
+                };
                 this.openModal('confirmModal');
             },
-            closeConfirm() { this.closeModal('confirmModal'); this.confirmCallback = null; }
+            closeConfirm() { 
+                this.closeModal('confirmModal'); 
+                this.confirmCallback = null; 
+            }
         };
 
         window.addEventListener('DOMContentLoaded', () => app.init());
