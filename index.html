@@ -571,7 +571,7 @@ dialog[open]{animation:fadein .12s ease-out}
               <button class="btn" data-act="export-csv"><svg class="icon"><use href="#i-download"/></svg>Spreadsheet (.csv)</button>
               <label class="btn" tabindex="0"><svg class="icon"><use href="#i-upload"/></svg>Import…<input type="file" id="import-file" accept=".json,.csv,application/json,text/csv" class="sr-only"></label>
             </div>
-            <p class="xs muted" style="margin:10px 0 0">JSON restores everything (notes, sessions, dates, covers). Import merges; books already here are skipped. Old mbreading CSV exports still import.</p>
+            <p class="xs muted" style="margin:10px 0 0">JSON restores everything (notes, sessions, dates, covers). Import merges; books already here are skipped. Old mbreading.online CSV exports still import.</p>
           </div>
           <div class="card">
             <h2 class="section">Keyboard shortcuts</h2>
@@ -674,7 +674,7 @@ dialog[open]{animation:fadein .12s ease-out}
 <dialog id="dlg-welcome">
   <div class="dlg" style="text-align:center">
     <svg width="56" height="56" style="margin:4px auto 12px;display:block"><use href="#i-logo"/></svg>
-    <h3 style="margin-bottom:8px">Welcome to mbreading</h3>
+    <h3 style="margin-bottom:8px">Welcome to mbreading.online</h3>
     <p class="muted" style="margin:0 0 18px">A little daily push to keep reading on your mind.</p>
     <div style="text-align:left;display:grid;gap:12px;margin-bottom:18px" class="small">
       <div class="row" style="align-items:flex-start"><span class="chip green">1</span><div><b>Add what you're reading.</b> Search by title to auto-fill pages and cover.</div></div>
@@ -881,7 +881,7 @@ function render() {
 function renderSide() {
   const st = streakInfo();
   $('#side-streak').innerHTML = `<div class="row">${ic('flame')}<div><b>${st.cur}</b> day streak<br><span>${st.today} / ${state.settings.dailyGoal} pages today</span></div></div>`;
-  document.title = st.cur > 0 ? `${st.cur}-day streak · mbreading` : 'mbreading.online – Reading Tracker';
+  document.title = st.cur > 0 ? `${st.cur}-day streak · mbreading.online` : 'mbreading.online – Reading Tracker';
 }
 
 /* ---------- Today ---------- */
