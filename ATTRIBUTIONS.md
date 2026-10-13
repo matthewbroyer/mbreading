@@ -2,14 +2,23 @@
 
 mbreading.online is an independent project. It is not affiliated with or endorsed by any company or project listed here.
 
-## Code loaded at runtime (not bundled in the file)
+## Code served with the app (`vendor/` folder)
 
-| Component | Version | Author | License | Loaded from |
-|---|---|---|---|---|
-| PDF.js (`pdf.min.js`, `pdf.worker.min.js`, `cmaps/`, `standard_fonts/`) | 3.11.174 | Mozilla Foundation and contributors | Apache License 2.0 | cdnjs.cloudflare.com |
-| StPageFlip (`page-flip`) | 2.0.7 | Nodlik | MIT License | cdn.jsdelivr.net |
+Since 3.3.0 these libraries are copied into the `vendor/` folder and served from the same site as the app. Nothing is loaded from a third-party server.
 
-PDF.js's `standard_fonts/` folder contains fonts (for example Foxit and Liberation fonts) under their own licenses. mbreading.online does not redistribute them. PDF.js downloads them from cdnjs when a PDF needs them.
+| Component | Version | Author | License | Location | License file |
+|---|---|---|---|---|---|
+| PDF.js (`pdf.min.js`, `pdf.worker.min.js`, `cmaps/`, `standard_fonts/`) | 3.11.174 | Mozilla Foundation and contributors | Apache License 2.0 | `vendor/pdfjs/` | `vendor/pdfjs/LICENSE.txt` |
+| StPageFlip (`page-flip.browser.js`) | 2.0.7 | Nodlik | MIT License | `vendor/page-flip/` | `vendor/page-flip/LICENSE.txt` |
+| Tesseract.js (`tesseract.min.js`, `worker.min.js`) | 6.0.1 | Project Naptha / Jerome Wu, Balearica and contributors | Apache License 2.0 | `vendor/tesseract/` | `vendor/tesseract/LICENSE-tesseract.js.md` |
+| tesseract.js-core (`tesseract-core-lstm.wasm.js`, `tesseract-core-simd-lstm.wasm.js`): the Tesseract OCR engine (originally Hewlett-Packard, later Google) compiled to WebAssembly | 6.1.2 | Project Naptha and contributors; Tesseract OCR authors | Apache License 2.0 | `vendor/tesseract/` | `vendor/tesseract/LICENSE-tesseract-core.txt` |
+| English trained data (`eng.traineddata.gz`, `4.0.0_best_int`) | `@tesseract.js-data/eng` 1.0.0 | Tesseract OCR project (tessdata), packaged by the Tesseract.js authors | Apache License 2.0 (tessdata); the npm package is MIT | `vendor/tesseract/` | covered by the files above |
+
+PDF.js and StPageFlip are the unmodified builds from the npm packages `pdfjs-dist@3.11.174` and `page-flip@2.0.7`. The Tesseract files come from the npm packages `tesseract.js@6.0.1`, `tesseract.js-core@6.1.2` and `@tesseract.js-data/eng@1.0.0`; the only change is that the trailing `sourceMappingURL` comment was removed from the two Tesseract.js files (the `.map` files aren't shipped). The Tesseract.js builds bundle small libraries under their own licenses, listed in `vendor/tesseract/THIRD-PARTY-NOTICES.txt`: regenerator-runtime (MIT), buffer (MIT) and ieee754 (BSD-3-Clause) by Feross Aboukhadijeh, and zlib.js by imaya (MIT).
+
+The Tesseract files load only when someone uses text recognition on a scanned PDF (added in 3.4.0). They are not part of the service worker's install list; the service worker caches them the first time they're used.
+
+PDF.js's `standard_fonts/` folder contains fonts (Foxit and Liberation) under their own licenses; their license files (`LICENSE_FOXIT`, `LICENSE_LIBERATION`) sit in that folder and must stay with it. The `cmaps/` folder has its own `LICENSE` (Adobe CMap resources). Keep these files if you redistribute the folder.
 
 ## Fonts embedded in `index.html`
 
@@ -35,8 +44,8 @@ The OFL lets you use, embed and redistribute these fonts, including commercially
 ## Content
 
 - **Sample book "Reading Out Loud"** (embedded PDF, 7 pages): written for this app and generated with the ReportLab library on September 25, 2026. It replaces the September 24 mbpdf sample. Its text describes only this app. It embeds subsets of DejaVu Serif, DejaVu Serif Bold and DejaVu Sans (Bitstream Vera license plus public-domain DejaVu changes, which allow embedding) and references Helvetica as a standard PDF font without embedding it.
-- **Interface icons, logo and favicon:** simple line drawings defined inline in the HTML. They don't come from an icon library.
+- **Interface icons, logo and favicon:** simple line drawings defined inline in the HTML. They don't come from an icon library. The installable-app icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, `favicon.ico`) are generated from `favicon.svg`.
 
 ## Trademarks
 
-PDF is an ISO standard (ISO 32000). EPUB is a W3C standard. Google, Microsoft, Mozilla, IBM and the Internet Archive are named only to describe where voices, libraries or services come from.
+PDF is an ISO standard (ISO 32000). EPUB is a W3C standard. Google, Hewlett-Packard, Microsoft, Mozilla, IBM and the Internet Archive are named only to describe where voices, libraries or services come from.
