@@ -1,6 +1,6 @@
 /* mbreading.online service worker.
    Bump VERSION every time any file in this folder changes, so old cached copies are dropped. */
-const VERSION = 'mbreading-v3.5.0';
+const VERSION = 'mbreading-v3.6.0';
 
 /* Everything the app needs to open and read PDFs/EPUBs offline.
    vendor/pdfjs/cmaps/ (CJK character maps, ~170 small files) is not listed: each is cached the first time a PDF needs it. */

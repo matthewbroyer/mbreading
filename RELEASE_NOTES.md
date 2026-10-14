@@ -2,6 +2,15 @@
 
 Newest first. One entry per release, in plain words a user would understand. The full technical log is in CHANGELOG.md, and the same notes show in the app under Settings & Help › Release notes.
 
+## 1.1 · 2026-10-14
+
+Internal build 3.6.0 (the number used in backups and the CHANGELOG).
+
+- About card at the bottom of Settings: version, release date, links and copyright in one place.
+- Installing from matthewbroyer.com: the hub's Install button opens the app with a short install prompt.
+- New "page not found" page that matches the app and links back to it.
+- The Install card moved to the bottom of Settings & Help, just above the About card.
+
 ## 2026-10-13 · 3.5.0
 
 - New look shared with the other mb apps: sections on the left on a computer, icons on a tablet, a bottom bar on a phone. The logo and name always take you back to Today.
