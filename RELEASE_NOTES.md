@@ -3,6 +3,7 @@
 Newest first. One entry per release, in plain words a user would understand. The full technical log is in CHANGELOG.md, and the same notes show in the app under Settings & Help › Release notes.
 
 ## 1.1 · 2026-10-14
+- New logo, redrawn in the same style as the other mb apps (app icon, tab icon, share image and pages all updated).
 
 Internal build 3.6.0 (the number used in backups and the CHANGELOG).
 
