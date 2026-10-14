@@ -145,13 +145,6 @@ kbd{font:600 11px var(--font);border:1px solid var(--border-strong);border-botto
 
 /* ---------- App shell: MB Suite v3 sidebar (rules in the "MB Suite" block at the end of <head>) ---------- */
 /* light/dark switch: same component as the other apps */
-.themesw{display:inline-flex;align-items:center;flex:none;padding:0;border:0;background:none;border-radius:var(--r-sm);min-height:var(--ctl-sm);cursor:pointer}
-.themesw .tk{position:relative;display:block;width:52px;height:26px;border-radius:var(--r-sm);background:var(--surface-3);border:1px solid var(--border-strong);transition:border-color var(--ease)}
-.themesw .th{position:absolute;top:2px;left:2px;width:22px;height:20px;border-radius:3px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;transition:transform var(--ease)}
-.themesw .th .icon{width:13px;height:13px}
-.themesw[aria-checked="true"] .th{transform:translateX(24px)}
-.themesw:hover .tk{border-color:color-mix(in srgb,var(--text) 35%,var(--border-strong))}
-.themesw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .search{position:relative;flex:1 1 0;min-width:170px;max-width:520px;margin:0 auto}
 .search .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);width:16px;height:16px}
 .search input{width:100%;min-height:var(--ctl-sm);border:1px solid var(--border-strong);background:var(--surface-2);border-radius:var(--r-sm);padding:5px 36px 5px 34px;outline:none;font-size:13.5px;transition:border-color var(--ease),background-color var(--ease),box-shadow var(--ease)}
@@ -449,8 +442,6 @@ details.faq h4:first-child{margin-top:0}
 .bk-chip:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface-3)}
 .bk-chip.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface));border-color:color-mix(in srgb,var(--warn) 55%,transparent);color:var(--warn-ink)}
 .bk-chip.warn:hover{background:color-mix(in srgb,var(--warn) 26%,var(--surface))}
-#dataBtn{position:relative}
-#dataBtn .dot{display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:2px;background:var(--warn);box-shadow:0 0 0 2px var(--surface)}
 .data-pop{min-width:330px;max-width:calc(100vw - 24px)}
 .pop .pop-primary{background:var(--accent-soft);color:var(--accent-text);margin-bottom:2px}
 .pop .pop-primary svg{color:var(--accent-text)}
@@ -794,7 +785,6 @@ body:has(#mini:not([hidden])) .toasts{bottom:92px}
 }
 @media (pointer:coarse){.pop kbd{display:none}}
 @media (max-width:520px){
-  #dataBtn.warn .dot{display:block}
   .data-pop{position:fixed;left:8px;right:8px;top:calc(56px + env(safe-area-inset-top,0px));min-width:0;max-width:none;max-height:calc(100dvh - 140px);overflow:auto}
 }
 @media (max-width:420px){
@@ -1109,16 +1099,15 @@ dialog.mb-share::backdrop{background:var(--scrim)}
 /* page bar: search, then actions (search · undo/redo · backup status · Data · theme · Add · Log) */
 .page-bar .search{flex:1 1 auto;max-width:440px;min-width:150px;margin:0 0 0 auto}
 .page-bar .actions{margin-left:0}
-.page-bar .actions .btn{min-height:var(--ctl-sm)}
-.page-bar .actions .btn-icon{width:var(--ctl-sm);min-width:var(--ctl-sm)}
 .search-tgl,.search-x{display:none}
+/* .tb sets display:inline-flex (mb-suite-topbar.css); these keep the toggle phone-only and Redo/Add/Log desktop-only */
+.page-bar .actions .tb.search-tgl{display:none}
+.page-bar .actions .bk-chip{min-height:var(--tb-h,36px)}
+@media (max-width:767px){.page-bar .actions .tb.hide-phone{display:none}}
 .search .search-x .icon{position:static;transform:none;color:inherit;width:18px;height:18px}
-@media (max-width:1279px){.page-bar .actions .btn:not(.btn-primary):not(.btn-icon) .bt-t{display:none}.page-bar .actions .btn:not(.btn-primary):not(.btn-icon){padding:0;width:var(--ctl-sm)}}
-@media (max-width:1100px){.page-bar .actions .btn-primary .bt-t{display:none}.page-bar .actions .btn-primary{padding:0;width:var(--ctl-sm)}}
-@media (max-width:900px){.page-bar .bk-chip{display:none}}
 @media (max-width:767px){
   .page-bar .search{display:none}
-  .search-tgl{display:inline-flex}
+  .page-bar .actions .tb.search-tgl{display:inline-flex}
   .page-bar.searching .search{display:flex;align-items:center;gap:6px;position:absolute;left:0;right:0;top:3px;bottom:0;max-width:none;margin:0;
     padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));background:var(--surface);z-index:2}
   .page-bar.searching .search>.icon{left:calc(max(12px,env(safe-area-inset-left)) + 10px)}
@@ -1126,7 +1115,6 @@ dialog.mb-share::backdrop{background:var(--scrim)}
   .page-bar.searching .search-x{display:inline-flex;flex:none}
   .page-bar .search kbd{display:none}
   .page-bar .search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
-  .page-bar .actions{gap:2px}
 }
 /* the view's own heading names it on phones; on wider screens the page bar does */
 @media (min-width:768px){.dup-h{display:none!important}}
@@ -1165,6 +1153,19 @@ dialog.mb-share::backdrop{background:var(--scrim)}
 <meta property="og:image:alt" content="Reading: Track every book. Read or listen right here.">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "mbreading.online", "alternateName": "Reading", "url": "https://mbreading.online/", "description": "Free, private reading tracker and reader. Keep a streak, save notes and quotes, and read or listen to your PDFs, EPUBs and audiobooks. No account.", "applicationCategory": "LifestyleApplication", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "author": {"@type": "Person", "name": "Matthew Broyer", "url": "https://matthewbroyer.com/"}}</script>
+<style id="mbre-search-std">
+/* v1.2.1 · desktop search field = suite standard search control (kit v3.2.1): 240px (200 under 1280), 36px, white, "/" hint */
+@media (min-width:768px){
+  .page-bar .search.tb-search{flex:0 0 240px;width:240px;max-width:240px;min-width:0;margin:0 0 0 auto}
+  .page-bar .search.tb-search .icon{left:10px;width:18px;height:18px;color:var(--muted)}
+  .page-bar .search.tb-search input{height:36px;min-height:36px;padding:0 30px 0 36px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-sm);font-size:13.5px;box-shadow:none}
+  .page-bar .search.tb-search input:hover:not(:focus){border-color:var(--accent-line,var(--accent))}
+  .page-bar .search.tb-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft,transparent);background:var(--surface)}
+  .page-bar .search.tb-search kbd{right:6px;padding:1px 5px;border:1px solid var(--border);border-radius:3px;background:var(--surface-2);font:500 11px/1.4 var(--font,system-ui);color:var(--muted)}
+}
+@media (min-width:768px) and (max-width:1279px){ .page-bar .search.tb-search{flex-basis:200px;width:200px;max-width:200px} }
+</style>
+<link rel="stylesheet" href="mb-suite-topbar.css">
 </head>
 <body class="mb-shell">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1227,7 +1228,7 @@ dialog.mb-share::backdrop{background:var(--scrim)}
 
 <aside class="mb-side" aria-label="App">
   <a class="brand" href="./" data-home aria-label="mbreading.online: go to Today"><span class="logo"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="mbre-g1-1" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="54" y2="64"><stop offset="0" stop-color="#9a5e8c"/><stop offset=".55" stop-color="#8A4479"/><stop offset="1" stop-color="#6e3661"/></linearGradient><clipPath id="mbre-c1-1"><rect width="64" height="64" rx="18"/></clipPath></defs><g clip-path="url(#mbre-c1-1)"><rect width="64" height="64" fill="url(#mbre-g1-1)"/><path d="M31 22.5C26 19 18.5 18 11.5 19.3v23.5c7-1.3 14.5-.3 19.5 3.2z" fill="#fff"/><path d="M33 22.5c5-3.5 12.5-4.5 19.5-3.2v23.5c-7-1.3-14.5-.3-19.5 3.2z" fill="#fff"/>
-<path d="M40 19.4V31.5l3.2-2.4 3.2 2.4V19" fill="#F2B640"/></g></svg></span><span class="bt"><b>mbreading<i class="tld">.online</i></b><span class="brand-ver">Official Web App · v1.1</span></span></a>
+<path d="M40 19.4V31.5l3.2-2.4 3.2 2.4V19" fill="#F2B640"/></g></svg></span><span class="bt"><b>mbreading<i class="tld">.online</i></b><span class="brand-ver">Official Web App · v1.2</span></span></a>
   <nav class="side-nav" aria-label="Sections">
     <button type="button" data-nav="today"><svg class="icon"><use href="#i-home"/></svg><span>Today</span></button>
     <button type="button" data-nav="library"><svg class="icon"><use href="#i-books"/></svg><span>Library</span></button>
@@ -1244,20 +1245,20 @@ dialog.mb-share::backdrop{background:var(--scrim)}
 <div class="shell mb-main">
   <header class="page-bar">
     <a class="brand phone-brand" href="./" data-home aria-label="mbreading.online: go to Today"><span class="logo"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="mbre-g1-2" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="54" y2="64"><stop offset="0" stop-color="#9a5e8c"/><stop offset=".55" stop-color="#8A4479"/><stop offset="1" stop-color="#6e3661"/></linearGradient><clipPath id="mbre-c1-2"><rect width="64" height="64" rx="18"/></clipPath></defs><g clip-path="url(#mbre-c1-2)"><rect width="64" height="64" fill="url(#mbre-g1-2)"/><path d="M31 22.5C26 19 18.5 18 11.5 19.3v23.5c7-1.3 14.5-.3 19.5 3.2z" fill="#fff"/><path d="M33 22.5c5-3.5 12.5-4.5 19.5-3.2v23.5c-7-1.3-14.5-.3-19.5 3.2z" fill="#fff"/>
-<path d="M40 19.4V31.5l3.2-2.4 3.2 2.4V19" fill="#F2B640"/></g></svg></span><span class="bt"><b>mbreading<i class="tld">.online</i></b><span class="brand-ver">Official Web App · v1.1</span></span></a>
+<path d="M40 19.4V31.5l3.2-2.4 3.2 2.4V19" fill="#F2B640"/></g></svg></span><span class="bt"><b>mbreading<i class="tld">.online</i></b><span class="brand-ver">Official Web App · v1.2</span></span></a>
     <h1 class="page-title" id="pageTitle">Today</h1>
-    <div class="search" role="search" id="searchBox">
+    <div class="search tb-search" role="search" id="searchBox">
         <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-        <input type="search" id="search" placeholder="Search books, authors, notes, quotes…" aria-label="Search" autocomplete="off">
+        <input type="search" id="search" placeholder="Search…" aria-label="Search" autocomplete="off">
         <kbd>/</kbd>
       <button type="button" class="btn btn-ghost btn-icon search-x" id="searchClose" aria-label="Close search"><svg class="icon"><use href="#i-x"/></svg></button></div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-icon search-tgl" id="searchTgl" aria-label="Search" aria-expanded="false" aria-controls="searchBox"><svg class="icon"><use href="#i-search"/></svg></button>
-      <button class="btn btn-ghost btn-icon" id="btn-undo" data-act="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg class="icon"><use href="#i-undo"/></svg></button>
-      <button class="btn btn-ghost btn-icon hide-phone" id="btn-redo" data-act="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled><svg class="icon"><use href="#i-redo"/></svg></button>
-      <button class="bk-chip hide-phone" id="bkChip" data-act="backup-now" title="Save backup now (Ctrl+S)"></button>
+      <button type="button" class="tb tb-search search-tgl" id="searchTgl" aria-label="Search" title="Search" aria-expanded="false" aria-controls="searchBox"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+      <button type="button" class="tb tb-opt" id="btn-undo" data-act="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><svg class="icon" aria-hidden="true"><use href="#i-undo"/></svg></button>
+      <button type="button" class="tb hide-phone" id="btn-redo" data-act="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled><svg class="icon" aria-hidden="true"><use href="#i-redo"/></svg></button>
+      <button type="button" class="bk-chip tb-chip hide-phone" id="bkChip" data-act="backup-now" title="Save backup now (Ctrl+S)"></button>
       <div class="menu-wrap">
-          <button class="btn" id="dataBtn" aria-haspopup="true" aria-expanded="false" aria-controls="dataMenu" title="Backup, import and export" aria-label="Data: backup, import and export"><svg class="icon"><use href="#i-data"/></svg><span class="bt-t">Data</span><i class="dot" aria-hidden="true"></i></button>
+          <button type="button" class="tb" id="dataBtn" aria-haspopup="true" aria-expanded="false" aria-controls="dataMenu" title="Backup, import and export" aria-label="Data: backup, import and export"><svg class="icon" aria-hidden="true"><use href="#i-data"/></svg><span class="tb-lbl">Data</span><svg class="tb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg><i class="tb-dot" aria-hidden="true" hidden></i></button>
           <div id="dataMenu" class="pop data-pop" hidden>
             <button data-act="backup-now" class="pop-primary"><svg class="icon"><use href="#i-check"/></svg><span class="pi"><span>Save backup now</span><small id="dm-save-sub">Updates your JSON backup file</small></span><kbd id="dm-kbd">Ctrl S</kbd></button>
             <button data-act="export-json"><svg class="icon"><use href="#i-download"/></svg><span class="pi">Export All (JSON)…<small>Full backup of books, notes, quotes and sessions. Restorable.</small></span></button>
@@ -1269,9 +1270,9 @@ dialog.mb-share::backdrop{background:var(--scrim)}
             <div class="pop-foot" id="dm-foot" role="status"></div>
           </div>
         </div>
-      <button class="themesw" id="themeSw" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme"><span class="tk"><span class="th"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg></span></span></button>
-      <button class="btn hide-phone" data-act="add" aria-label="Add book" title="Add book (N)"><svg class="icon"><use href="#i-plus"/></svg><span class="bt-t">Add book</span></button>
-      <button class="btn btn-primary hide-phone" data-act="log" aria-label="Log reading" title="Log reading (L)"><svg class="icon"><use href="#i-bookmark"/></svg><span class="bt-t">Log reading</span></button>
+      <button type="button" class="themesw" id="themeSw" role="switch" aria-checked="false" aria-label="Dark theme" title="Dark theme"><span class="tk"><svg class="i-sun" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3"/></svg><svg class="i-moon" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="M16.5 12.2A6.6 6.6 0 0 1 7.8 3.5a6.6 6.6 0 1 0 8.7 8.7Z"/></svg><i class="th"></i></span></button>
+      <button type="button" class="tb hide-phone" data-act="add" aria-label="Add book" title="Add book (N)"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span class="tb-lbl">Add book</span></button>
+      <button type="button" class="tb tb-primary hide-phone" data-act="log" aria-label="Log reading" title="Log reading (L)"><svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg><span class="tb-lbl">Log reading</span></button>
     </div>
   </header>
 
@@ -1603,7 +1604,7 @@ dialog.mb-share::backdrop{background:var(--scrim)}
             <svg class="uic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.01"/></svg>
             <div>
               <b>mbreading.online™</b>
-              <p>Version 1.1 · Oct 14, 2026</p>
+              <p>Version 1.2 · Oct 14, 2026</p>
               <p class="mb-about-links"><button type="button" data-act="whats-new">What's new</button><button type="button" data-act="legal-privacy">Privacy</button><button type="button" data-act="legal-terms">Terms</button><a href="https://matthewbroyer.com/">More free apps at matthewbroyer.com</a></p>
               <p class="mb-about-copy">© 2026 Matthew Broyer. All rights reserved.</p>
             </div>
@@ -1985,10 +1986,20 @@ dialog.mb-share::backdrop{background:var(--scrim)}
 <script>
 'use strict';
 /* ================= mbreading.online · shared core ================= */
-const APP_VERSION = '3.6.0';      // internal build number: backups, the What's new banner and the service worker. Not shown to readers.
-const SHOWN_VERSION = 'v1.1';     // the version readers see, same as every mb app ("Official Web App · v1.1")
+const APP_VERSION = '3.7.0';      // internal build number: backups, the What's new banner and the service worker. Not shown to readers.
+const SHOWN_VERSION = 'v1.2';     // the version readers see, same as every mb app ("Official Web App · v1.2")
 /* Release notes: newest first. Add an entry here for every release; the app shows it once to returning readers. */
 const RELEASES = [
+  { v: '3.7.0', date: '2026-10-14', title: 'A tidier top bar', summary: 'The top bar now matches the other mb apps: the full app name shows on phones, and search, Undo, Data and the light/dark switch are matching square buttons.', groups: [
+    ['Improved', [
+      'Phones: the app name no longer gets cut off (\u201cmbreading.onl\u2026\u201d), and search, Undo, Data and the light/dark switch are matching square buttons.',
+      'The light/dark switch shows a sun and a moon so it\u2019s clear what it does.',
+      'Computers: Data, Add book and Log reading keep their text labels at every window size, and Data shows a small dot when a backup is due.'
+    ]],
+    ['Your data', [
+      'Nothing changed: same storage keys and format.'
+    ]]
+  ] },
   { v: '3.6.0', date: '2026-10-14', title: 'About, and installing from matthewbroyer.com', summary: 'An About card at the bottom of Settings & Help, a short install prompt when you come from matthewbroyer.com, and a new page-not-found page.', groups: [
     ['New', [
       'About card at the bottom of Settings & Help: the version, release date, What\u2019s new, a link to more free apps and the copyright in one place.',
@@ -5747,7 +5758,7 @@ lookListeners.push(() => { if (!booted) return; if (view.name === 'settings') re
 /* header light/dark switch: on = Dark. From Sepia or System it switches to Dark or Light. */
 function syncThemeSw() {
   const on = resolvedLook() === 'night', b = $('#themeSw');
-  b.setAttribute('aria-checked', on); b.querySelector('use').setAttribute('href', on ? '#i-moon' : '#i-sun');
+  b.setAttribute('aria-checked', on);
   $$('#welcome-look button').forEach(x => x.setAttribute('aria-pressed', (x.dataset.wlook === 'night') === on));
 }
 lookListeners.push(syncThemeSw);
@@ -6319,7 +6330,7 @@ function renderBackupPill() {
   const p = $('#bk-pill'); p.innerHTML = html; p.classList.toggle('warn', b.warn);
   const c = $('#bkChip'); c.innerHTML = html; c.classList.toggle('warn', b.warn);
   c.setAttribute('aria-label', `${b.text}. Save backup now`);
-  const d = $('#dataBtn'); d.classList.toggle('warn', b.warn); d.title = `Backup, import and export · ${b.text}`;
+  const d = $('#dataBtn'); d.classList.toggle('warn', b.warn); d.querySelector('.tb-dot').hidden = !b.warn; d.title = `Backup, import and export · ${b.text}`;
   renderDataFoot(b);
 }
 /* Data menu footer: backup status + where Save backup now writes */

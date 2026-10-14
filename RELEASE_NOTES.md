@@ -2,6 +2,15 @@
 
 Newest first. One entry per release, in plain words a user would understand. The full technical log is in CHANGELOG.md, and the same notes show in the app under Settings & Help › Release notes.
 
+## 1.2 · 2026-10-14
+- On computers, the search box, backup status and logo spacing now look exactly like the other mb apps: same size, same "Search…" text and the same "/" shortcut.
+- Tidier top bar that matches the other mb apps. On phones the app name no longer gets cut off, and search, Undo, Data and the light/dark switch are matching square buttons.
+- The light/dark switch shows a sun and a moon so it's clear what it does.
+- On computers, Data, Add book and Log reading keep their text labels at every window size, and Data shows a small dot when a backup is due.
+- Your books, notes and history are untouched.
+
+Internal build 3.7.0.
+
 ## 1.1 · 2026-10-14
 - New logo, redrawn in the same style as the other mb apps (app icon, tab icon, share image and pages all updated).
 

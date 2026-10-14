@@ -1,13 +1,13 @@
 /* mbreading.online service worker.
    Bump VERSION every time any file in this folder changes, so old cached copies are dropped. */
-const VERSION = 'mbreading-v3.6.0';
+const VERSION = 'mbreading-v3.7.0-search';
 
 /* Everything the app needs to open and read PDFs/EPUBs offline.
    vendor/pdfjs/cmaps/ (CJK character maps, ~170 small files) is not listed: each is cached the first time a PDF needs it. */
 /* Named APP_SHELL (not SHELL) on purpose: the release kit rewrites a plain SHELL list from index.html's own
    references, which would drop the PDF worker and fonts that the app loads on demand. */
 const APP_SHELL = [
-  './', 'index.html', 'manifest.json', 'mb-title.js', 'mb-install.js', 'mb-share.js',
+  './', 'index.html', 'manifest.json', 'mb-suite-topbar.css', 'mb-title.js', 'mb-install.js', 'mb-share.js',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
   'favicon.svg', 'favicon.ico',
   'vendor/pdfjs/pdf.min.js', 'vendor/pdfjs/pdf.worker.min.js',
